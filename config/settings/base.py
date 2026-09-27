@@ -200,6 +200,10 @@ MAX_PAGES = env.int('MAX_PAGES', default=200)
 MAX_PROCESSING_TIME_SECONDS = env.int('MAX_PROCESSING_TIME_SECONDS', default=180)
 FILE_RETENTION_DAYS = env.int('FILE_RETENTION_DAYS', default=7)
 PDF_RENDER_DPI = env.int('PDF_RENDER_DPI', default=150)
+PDF_METADATA_PRODUCER = env.str('PDF_METADATA_PRODUCER', default='Humatron PDF Processor')
+PDF_METADATA_TITLE = env.str('PDF_METADATA_TITLE', default='')
+PDF_METADATA_CREATOR = env.str('PDF_METADATA_CREATOR', default='')
+
 
 
 # Payments Configuration
