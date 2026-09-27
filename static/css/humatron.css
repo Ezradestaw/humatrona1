@@ -218,13 +218,94 @@ p.lead { font-size: 16px; color: var(--color-text); }
 .btn-danger:hover {
   background-color: #991b1b;
 }
+.btn-success {
+  background-color: var(--color-success);
+  color: white;
+  border-color: var(--color-success);
+}
+.btn-success:hover {
+  background-color: #166534;
+  border-color: #166534;
+}
 .btn-sm {
   padding: 4px 10px;
   font-size: 13px;
 }
+.btn-lg {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+}
 .btn-block {
   display: flex;
   width: 100%;
+}
+
+/* Upload Dropzone & File Selection Component */
+.upload-dropzone {
+  border: 2px dashed var(--color-border-dark);
+  border-radius: 6px;
+  background-color: #f8fafc;
+  padding: 32px 20px;
+  text-align: center;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.upload-dropzone:hover, .upload-dropzone.dragover {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+.upload-dropzone-icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 12px auto;
+  color: var(--color-primary);
+  display: block;
+}
+.upload-dropzone-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+.upload-dropzone-hint {
+  font-size: 13px;
+  color: var(--color-text-subtle);
+  margin-bottom: 16px;
+}
+.selected-file-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: white;
+  border: 1px solid #86efac;
+  background-color: #f0fdf4;
+  border-radius: 6px;
+  margin-top: 14px;
+}
+.selected-file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.selected-file-name {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 14px;
+  word-break: break-all;
+}
+.selected-file-size {
+  font-size: 12px;
+  color: var(--color-text-subtle);
+  margin-top: 2px;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* Formal Cards & Panels */

@@ -28,26 +28,43 @@
     <div class="grid-2">
       <div>
         <p style="font-size: 13px; margin-bottom: 4px;"><strong>Original File Size:</strong> {{ job.input_size_formatted }}</p>
-        <p style="font-size: 13px; margin-bottom: 4px;"><strong>Pages:</strong> {{ job.page_count|default:"Estimating..." }}</p>
+        <p style="font-size: 13px; margin-bottom: 4px;"><strong>Pages:</strong> <span id="job-page-count">{{ job.page_count|default:"Estimating..." }}</span></p>
         <p style="font-size: 13px; margin-bottom: 0;"><strong>Submission Time:</strong> {{ job.created_at|date:"Y-m-d H:i:s" }} UTC</p>
       </div>
       <div>
         <p style="font-size: 13px; margin-bottom: 4px;"><strong>Current Status:</strong> <span id="job-status-text">{{ job.status }}</span></p>
-        <p style="font-size: 13px; margin-bottom: 4px;"><strong>Processed Size:</strong> {{ job.output_size_formatted|default:"—" }}</p>
-        <p style="font-size: 13px; margin-bottom: 0;"><strong>Downloads:</strong> {{ job.download_count }}</p>
+        <p style="font-size: 13px; margin-bottom: 4px;"><strong>Processed Size:</strong> <span id="job-output-size">{{ job.output_size_formatted|default:"—" }}</span></p>
+        <p style="font-size: 13px; margin-bottom: 0;"><strong>Downloads:</strong> <span id="job-download-count">{{ job.download_count }}</span></p>
       </div>
     </div>
   </div>
 
-  {# Success Download Box (Section 19) #}
-  <div id="job-download-container" style="{% if not job.is_downloadable %}display: none;{% endif %} text-align: center; padding: 24px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; margin-bottom: 24px;">
-    <h3 style="color: var(--color-success); margin-bottom: 8px;">Processing Complete</h3>
-    <p style="font-size: 14px; margin-bottom: 16px;">
+  {# Success Download Box with Clear, Prominent Button #}
+  <div id="job-download-container" style="{% if not job.is_downloadable %}display: none;{% endif %} text-align: center; padding: 32px 24px; background: #f0fdf4; border: 2px solid #86efac; border-radius: 6px; margin-bottom: 24px;">
+    <div style="width: 44px; height: 44px; background: #dcfce7; color: var(--color-success); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; margin-bottom: 12px;">
+      ✓
+    </div>
+    <h2 style="color: var(--color-success); font-size: 22px; margin-bottom: 8px;">Processing Complete</h2>
+    <p style="font-size: 14px; color: var(--color-text-muted); max-width: 520px; margin: 0 auto 18px auto;">
       All pages have been flattened into raster images and reconstructed into your new PDF document.
     </p>
-    <a id="job-download-link" href="{% if job.is_downloadable %}{% url 'pdf_processor:download' job.id %}{% else %}#{% endif %}" class="btn btn-primary" style="padding: 10px 24px; font-size: 15px;">
-      Download Processed PDF
-    </a>
+
+    <!-- Clear, Highly Visible Download Button -->
+    <div style="margin-bottom: 16px;">
+      <a id="job-download-link"
+         href="{% if job.is_downloadable %}{% url 'pdf_processor:download' job.id %}{% else %}#{% endif %}"
+         class="btn btn-success btn-lg"
+         style="padding: 14px 34px; font-size: 16px; font-weight: 700; box-shadow: 0 2px 6px rgba(21, 128, 61, 0.25); text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Download Processed PDF
+      </a>
+    </div>
+
+    <div style="font-size: 12px; color: var(--color-text-subtle);">
+      Secure download &bull; Flattened Size: <strong id="download-output-size">{{ job.output_size_formatted|default:"—" }}</strong> &bull; Available for 7 days
+    </div>
   </div>
 
   {# Error Box #}
@@ -59,12 +76,12 @@
     <a href="{% url 'pdf_processor:upload' %}" class="btn btn-secondary btn-sm">Try Another Document</a>
   </div>
 
-  {% if job.status == 'QUEUED' or job.status == 'PROCESSING' %}
-    <div style="font-size: 13px; color: var(--color-text-subtle); text-align: center; margin-bottom: 20px;">
-      <span style="display: inline-block; width: 8px; height: 8px; background-color: var(--color-info); border-radius: 50%; margin-right: 6px;"></span>
-      Processing in background worker. This page will update automatically.
-    </div>
-  {% endif %}
+  {# Live Processing Notice Banner #}
+  <div id="job-processing-notice" style="{% if job.status == 'COMPLETED' or job.status == 'FAILED' or job.status == 'EXPIRED' %}display: none;{% endif %} font-size: 13px; color: var(--color-text-muted); text-align: center; margin-bottom: 20px; padding: 14px; background: #f0f9ff; border: 1px solid var(--color-info-border); border-radius: 4px;">
+    <span style="display: inline-block; width: 8px; height: 8px; background-color: var(--color-info); border-radius: 50%; margin-right: 8px; animation: pulse 1.5s infinite;"></span>
+    Processing in background worker. This page will automatically update with your download button once complete.
+  </div>
+
 
   <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 16px;">
     <a href="{% url 'pdf_processor:history' %}" class="btn btn-secondary btn-sm">&larr; Back to History</a>

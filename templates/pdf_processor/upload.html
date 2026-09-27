@@ -31,24 +31,60 @@
       {% endif %}
     </div>
 
-    <form method="post" enctype="multipart/form-data" action="{% url 'pdf_processor:upload' %}" novalidate style="margin-top: 20px;">
+    <form method="post" enctype="multipart/form-data" action="{% url 'pdf_processor:upload' %}" id="pdf-upload-form" novalidate style="margin-top: 20px;">
       {% csrf_token %}
 
       <div class="form-group">
-        <label class="form-label" for="pdf-file-input">Select PDF Document</label>
-        {{ form.pdf_file }}
-        <div class="form-help">{{ form.pdf_file.help_text }}</div>
-        {% if form.pdf_file.errors %}<div class="form-error">{{ form.pdf_file.errors.0 }}</div>{% endif %}
+        <label class="form-label" style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">Select PDF Document</label>
+
+        <!-- Clear, Prominent Dropzone and File Selection Button -->
+        <div class="upload-dropzone" id="upload-dropzone">
+          <svg class="upload-dropzone-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <div class="upload-dropzone-title">Drag & drop your PDF file here, or click to browse</div>
+          <div class="upload-dropzone-hint">Standard PDF (.pdf) &bull; Up to <strong>{{ max_size_mb }} MB</strong> &bull; Max <strong>{{ max_pages }} pages</strong></div>
+          
+          <button type="button" class="btn btn-secondary" id="browse-pdf-btn" style="padding: 10px 22px; font-weight: 600; font-size: 14px;">
+            📄 Choose PDF File
+          </button>
+        </div>
+
+        <!-- Hidden native file input -->
+        <input type="file" name="pdf_file" id="pdf-file-input" accept="application/pdf" style="display: none;" required>
+
+        <!-- Visual confirmation card for selected file -->
+        <div id="selected-file-card" class="selected-file-card" style="display: none;">
+          <div class="selected-file-info">
+            <span style="font-size: 26px;">📄</span>
+            <div>
+              <div id="selected-file-name" class="selected-file-name">document.pdf</div>
+              <div id="selected-file-size" class="selected-file-size">0 KB</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge badge-completed">Ready to Process</span>
+            <button type="button" class="btn btn-secondary btn-sm" id="change-file-btn">
+              Change File
+            </button>
+          </div>
+        </div>
+
+        {% if form.pdf_file.errors %}
+          <div class="form-error" style="margin-top: 8px;">{{ form.pdf_file.errors.0 }}</div>
+        {% endif %}
       </div>
 
       <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: 20px;">
         Security Notice: Files are processed in an isolated environment. Text, vector layers, and metadata are flattened into images. Original and converted files are automatically purged from the server after 7 days.
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block" style="padding: 10px 20px; font-size: 15px;">
-        Upload and Process Document
+      <!-- Clear Upload and Process Button -->
+      <button type="submit" id="upload-submit-btn" class="btn btn-primary btn-block btn-lg" style="padding: 12px 24px; font-size: 16px; font-weight: 600;">
+        ⚡ Upload and Process Document
       </button>
     </form>
+
   {% endif %}
 </div>
 {% endblock %}
