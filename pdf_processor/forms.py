@@ -7,13 +7,14 @@ from subscriptions.services import SubscriptionService
 class PDFUploadForm(forms.Form):
     pdf_file = forms.FileField(
         label="Select PDF Document",
-        widget=forms.ClearableFileInput(attrs={
-            'class': 'file-input',
-            'accept': 'application/pdf',
-            'id': 'pdf-file-input',
+        widget=forms.FileInput(attrs={
+            'class': 'form-input-file',
+            'accept': '.pdf,application/pdf',
+            'id': 'id_pdf_file',
         }),
-        help_text="Standard PDF file. Max file size and page limit determined by your subscription plan."
+        help_text="Standard PDF file (.pdf)"
     )
+
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)

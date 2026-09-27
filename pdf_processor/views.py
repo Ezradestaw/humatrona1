@@ -53,8 +53,24 @@ def upload_view(request):
                 status=PDFProcessingJob.STATUS_QUEUED
             )
 
-            # Dispatch background worker
-            process_pdf_job_task.delay(str(job.id))
+            # Process the PDF document reliably:
+            # If CELERY_TASK_ALWAYS_EAGER (default) or if Celery worker is offline, process synchronously
+            if getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', True):
+                process_pdf_job_task.apply(args=[str(job.id)])
+            else:
+                try:
+                    process_pdf_job_task.delay(str(job.id))
+                except Exception as task_err:
+                    logger.warning("Celery dispatch error (%s); processing inline directly", task_err)
+                    process_pdf_job_task.apply(args=[str(job.id)])
+
+            job.refresh_from_db()
+            if job.status == PDFProcessingJob.STATUS_COMPLETED:
+                messages.success(request, "Document processed successfully! Click the download button below.")
+            elif job.status == PDFProcessingJob.STATUS_FAILED:
+                messages.error(request, f"Processing failed: {job.error_message}")
+            else:
+                messages.info(request, "File uploaded successfully. Processing started.")
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -63,8 +79,8 @@ def upload_view(request):
                     'status_url': reverse('pdf_processor:job_detail', kwargs={'job_id': str(job.id)})
                 })
 
-            messages.info(request, "File uploaded successfully. Processing started.")
             return redirect('pdf_processor:job_detail', job_id=str(job.id))
+
         else:
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 errors = [str(err) for err_list in form.errors.values() for err in err_list]

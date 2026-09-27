@@ -3,25 +3,23 @@
 {% block title %}Process PDF Document — Humatron{% endblock %}
 
 {% block content %}
-<div class="panel" style="max-width: 680px; margin: 0 auto;">
+<div class="panel" style="max-width: 600px; margin: 30px auto;">
   <div class="panel-header">
-    <h1>Process PDF Document</h1>
-    <a href="{% url 'pdf_processor:history' %}" class="btn btn-secondary btn-sm">Processing History</a>
+    <h1>Upload & Process PDF</h1>
+    <a href="{% url 'pdf_processor:history' %}" class="btn btn-secondary btn-sm">History</a>
   </div>
 
-  <p>
-    Upload a standard PDF document to convert each page into an image and produce a clean, flattened image-based PDF.
-  </p>
+  <p>Select a PDF document from your computer. The server will flatten each page into a clean, image-based PDF and provide an instant download button.</p>
 
   {% if not allowed %}
     <div class="alert alert-warning" style="margin-top: 16px;">
       <strong>Quota Notice:</strong> {{ reason }}
-      <div style="margin-top: 10px;">
+      <div style="margin-top: 12px;">
         <a href="{% url 'subscriptions:plans' %}" class="btn btn-primary btn-sm">Upgrade / Renew Subscription</a>
       </div>
     </div>
   {% else %}
-    <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 14px 18px; border-radius: 4px; margin: 16px 0; font-size: 13px;">
+    <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 13px;">
       {% if is_trial %}
         <span class="badge badge-active">Free Trial</span>
         <span style="margin-left: 8px;">1 document available &bull; Max <strong>{{ max_size_mb }} MB</strong> &bull; Max <strong>{{ max_pages }} pages</strong></span>
@@ -31,60 +29,37 @@
       {% endif %}
     </div>
 
-    <form method="post" enctype="multipart/form-data" action="{% url 'pdf_processor:upload' %}" id="pdf-upload-form" novalidate style="margin-top: 20px;">
+    <form method="post" enctype="multipart/form-data" action="{% url 'pdf_processor:upload' %}" style="margin-top: 24px;">
       {% csrf_token %}
 
-      <div class="form-group">
-        <label class="form-label" style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">Select PDF Document</label>
-
-        <!-- Clear, Prominent Dropzone and File Selection Button -->
-        <div class="upload-dropzone" id="upload-dropzone">
-          <svg class="upload-dropzone-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-          <div class="upload-dropzone-title">Drag & drop your PDF file here, or click to browse</div>
-          <div class="upload-dropzone-hint">Standard PDF (.pdf) &bull; Up to <strong>{{ max_size_mb }} MB</strong> &bull; Max <strong>{{ max_pages }} pages</strong></div>
-          
-          <button type="button" class="btn btn-secondary" id="browse-pdf-btn" style="padding: 10px 22px; font-weight: 600; font-size: 14px;">
-            📄 Choose PDF File
-          </button>
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label for="id_pdf_file" class="form-label" style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">
+          Select PDF File:
+        </label>
+        <input type="file"
+               name="pdf_file"
+               id="id_pdf_file"
+               accept=".pdf,application/pdf"
+               required
+               style="display: block; width: 100%; padding: 12px; border: 1px solid var(--color-border-dark); border-radius: 4px; background: #ffffff; font-size: 14px; cursor: pointer;">
+        <div class="form-help" style="margin-top: 6px; font-size: 12px; color: var(--color-text-subtle);">
+          Choose a standard PDF file (.pdf) up to {{ max_size_mb }} MB.
         </div>
-
-        <!-- Hidden native file input -->
-        <input type="file" name="pdf_file" id="pdf-file-input" accept="application/pdf" style="display: none;" required>
-
-        <!-- Visual confirmation card for selected file -->
-        <div id="selected-file-card" class="selected-file-card" style="display: none;">
-          <div class="selected-file-info">
-            <span style="font-size: 26px;">📄</span>
-            <div>
-              <div id="selected-file-name" class="selected-file-name">document.pdf</div>
-              <div id="selected-file-size" class="selected-file-size">0 KB</div>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="badge badge-completed">Ready to Process</span>
-            <button type="button" class="btn btn-secondary btn-sm" id="change-file-btn">
-              Change File
-            </button>
-          </div>
-        </div>
-
         {% if form.pdf_file.errors %}
-          <div class="form-error" style="margin-top: 8px;">{{ form.pdf_file.errors.0 }}</div>
+          <div class="form-error" style="margin-top: 8px; color: var(--color-danger); font-size: 13px;">
+            {{ form.pdf_file.errors.0 }}
+          </div>
         {% endif %}
       </div>
 
-      <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: 20px;">
-        Security Notice: Files are processed in an isolated environment. Text, vector layers, and metadata are flattened into images. Original and converted files are automatically purged from the server after 7 days.
+      <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: 24px;">
+        Security Notice: Files are processed in an isolated environment. Text, vector layers, and metadata are flattened into images. Files are automatically removed after 7 days.
       </div>
 
-      <!-- Clear Upload and Process Button -->
-      <button type="submit" id="upload-submit-btn" class="btn btn-primary btn-block btn-lg" style="padding: 12px 24px; font-size: 16px; font-weight: 600;">
-        ⚡ Upload and Process Document
+      <button type="submit" class="btn btn-primary btn-block btn-lg" style="padding: 14px; font-size: 16px; font-weight: 600; cursor: pointer;">
+        Upload and Process PDF
       </button>
     </form>
-
   {% endif %}
 </div>
 {% endblock %}
