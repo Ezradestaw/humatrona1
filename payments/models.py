@@ -52,8 +52,14 @@ class Payment(models.Model):
         blank=True,
         related_name='payments'
     )
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, help_text="Amount paid/captured")
     currency = models.CharField(max_length=5, default='USD')
+    payment_country = models.CharField(max_length=100, blank=True)
+    student_discount_applied = models.BooleanField(default=False)
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    original_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    final_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

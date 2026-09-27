@@ -16,8 +16,9 @@ class SubscriptionPlan(models.Model):
     price_etb = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=6750.00,
-        help_text="Explicit Telebirr price in Ethiopian Birr (Sec 31)"
+        null=True,
+        blank=True,
+        help_text="Explicit Telebirr price in Ethiopian Birr, configured by administrator (Sec 1)"
     )
     duration_days = models.PositiveIntegerField(default=30)
     pdf_limit = models.PositiveIntegerField(default=25, help_text="Total PDFs allowed in this plan period")
@@ -32,7 +33,7 @@ class SubscriptionPlan(models.Model):
         ordering = ['sort_order', 'price']
 
     def __str__(self):
-        return f"{self.name} (${self.price} USD / {self.price_etb} ETB - {self.pdf_limit} PDFs)"
+        return f"{self.name} (${self.price} {self.currency} - {self.pdf_limit} PDFs)"
 
 
 class Subscription(models.Model):
@@ -72,6 +73,9 @@ class Subscription(models.Model):
     pdf_limit = models.PositiveIntegerField()
     used_count = models.PositiveIntegerField(default=0)
     payment_method = models.CharField(max_length=32, blank=True)
+    payment_country = models.CharField(max_length=100, blank=True)
+    student_discount_applied = models.BooleanField(default=False)
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     is_notified_expiring = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

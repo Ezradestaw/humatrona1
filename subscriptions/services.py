@@ -9,6 +9,60 @@ from notifications.services import EmailService
 logger = logging.getLogger('humatron')
 
 
+from decimal import Decimal, ROUND_HALF_UP
+
+
+class PricingCalculator:
+    """
+    Sections 15, 16, 18, 19:
+    Authoritative server-side pricing calculation engine with Decimal arithmetic.
+    Applies 25% student discount strictly when the authenticated user is a verified student.
+    """
+
+    STUDENT_DISCOUNT_PERCENT = Decimal('25.00')
+
+    @classmethod
+    def calculate(cls, plan, user):
+        is_student = bool(user and user.is_authenticated and getattr(user, 'is_verified_student', False))
+        discount_percentage = cls.STUDENT_DISCOUNT_PERCENT if is_student else Decimal('0.00')
+
+        # 1. USD Pricing (PayPal / Default)
+        original_usd = Decimal(str(plan.price))
+        if is_student:
+            discount_usd = (original_usd * Decimal('0.25')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            final_usd = original_usd - discount_usd
+        else:
+            discount_usd = Decimal('0.00')
+            final_usd = original_usd
+
+        # 2. ETB Pricing (Telebirr - ONLY if explicitly configured by administrator per Sec 1)
+        has_configured_etb = bool(plan.price_etb and plan.price_etb > 0)
+        if has_configured_etb:
+            original_etb = Decimal(str(plan.price_etb))
+            if is_student:
+                discount_etb = (original_etb * Decimal('0.25')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                final_etb = original_etb - discount_etb
+            else:
+                discount_etb = Decimal('0.00')
+                final_etb = original_etb
+        else:
+            original_etb = None
+            discount_etb = None
+            final_etb = None
+
+        return {
+            'is_student_discount': is_student,
+            'discount_percentage': discount_percentage,
+            'original_usd': original_usd,
+            'discount_usd': discount_usd,
+            'final_usd': final_usd,
+            'has_configured_etb': has_configured_etb,
+            'original_etb': original_etb,
+            'discount_etb': discount_etb,
+            'final_etb': final_etb,
+        }
+
+
 class SubscriptionService:
     """Authoritative business logic for plans, subscriptions, and quotas."""
 
@@ -102,16 +156,18 @@ class SubscriptionService:
 
     @classmethod
     @transaction.atomic
-    def activate_subscription(cls, user, plan, payment_method, duration_days=None):
+    def activate_subscription(cls, user, plan, payment_method, duration_days=None,
+                              student_discount_applied=False, discount_percentage=Decimal('0.00'),
+                              payment_country=""):
         """
         Activates a subscription atomically inside a database transaction.
-        Transitions any previous active subscription to EXPIRED.
+        Transitions any previous active subscription to CANCELLED.
         """
         now = timezone.now()
         days = duration_days or plan.duration_days
         end_date = now + timedelta(days=days)
 
-        # Mark prior active subscriptions as replaced/expired
+        # Mark prior active subscriptions as replaced/cancelled
         Subscription.objects.filter(
             user=user,
             status=Subscription.STATUS_ACTIVE
@@ -125,9 +181,13 @@ class SubscriptionService:
             end_date=end_date,
             pdf_limit=plan.pdf_limit,
             used_count=0,
-            payment_method=payment_method
+            payment_method=payment_method,
+            payment_country=payment_country or user.country,
+            student_discount_applied=student_discount_applied,
+            discount_percentage=discount_percentage
         )
 
         EmailService.send_subscription_activated_email(user, sub)
-        logger.info("Subscription activated for user %s: Plan %s, Valid until %s", user.email, plan.name, end_date)
+        logger.info("Subscription activated for user %s: Plan %s, Valid until %s (Discount: %s%%)",
+                    user.email, plan.name, end_date, discount_percentage)
         return sub

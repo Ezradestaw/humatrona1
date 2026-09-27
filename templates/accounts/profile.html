@@ -7,6 +7,22 @@
   <h1>Account Profile</h1>
   <p>Update your personal details and contact settings.</p>
 
+  <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 14px 18px; border-radius: 4px; margin: 16px 0 20px 0; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <strong>Student Discount (25% Off)</strong><br>
+      <span style="font-size: 13px; color: var(--color-text-subtle);">
+        {% if user.is_verified_student %}
+          <span style="color: var(--color-success); font-weight: 600;">Active: Verified Student</span>
+        {% else %}
+          Verify your student status with your educational email and student ID.
+        {% endif %}
+      </span>
+    </div>
+    <a href="{% url 'accounts:student_verification' %}" class="btn btn-secondary btn-sm" style="white-space: nowrap;">
+      {% if user.is_verified_student %}Manage Status{% else %}Verify Student Status{% endif %}
+    </a>
+  </div>
+
   <form method="post" action="{% url 'accounts:profile' %}" novalidate style="margin-top: 20px;">
     {% csrf_token %}
 

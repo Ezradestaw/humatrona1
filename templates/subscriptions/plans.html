@@ -8,14 +8,23 @@
   <p class="lead" style="max-width: 640px; margin: 0 auto;">
     Choose the right capacity for your PDF conversion needs. All plans include high-resolution rendering, page dimension preservation, and secure 7-day retention.
   </p>
-  {% if is_ethiopia %}
-    <div class="badge badge-info" style="margin-top: 14px; font-size: 13px; padding: 6px 12px;">
-      Detected Location: Ethiopia &bull; Telebirr payment supported in ETB
-    </div>
-  {% else %}
-    <div class="badge badge-info" style="margin-top: 14px; font-size: 13px; padding: 6px 12px;">
-      Detected Location: {{ user_country }} &bull; Standard international payment via PayPal
-    </div>
+  {% if user.is_authenticated %}
+    {% if is_ethiopia %}
+      <div class="badge badge-info" style="margin-top: 14px; font-size: 13px; padding: 6px 12px;">
+        Registered Country: Ethiopia &bull; Telebirr checkout available
+      </div>
+    {% else %}
+      <div class="badge badge-info" style="margin-top: 14px; font-size: 13px; padding: 6px 12px;">
+        Registered Country: {{ user.country }} &bull; PayPal checkout available
+      </div>
+    {% endif %}
+    {% if user.is_verified_student %}
+      <div style="margin-top: 8px;">
+        <span class="badge" style="background: #2e7d32; color: #fff; font-size: 13px; padding: 4px 10px;">
+          Verified Student: 25% Discount Applied at Checkout
+        </span>
+      </div>
+    {% endif %}
   {% endif %}
 </div>
 
@@ -38,9 +47,13 @@
       <p style="font-size: 13px; min-height: 48px; margin-top: 6px;">{{ plan.description }}</p>
 
       <div class="plan-price">${{ plan.price|floatformat:0 }} <span class="plan-currency-sub">USD / {{ plan.duration_days }} days</span></div>
-      <div style="font-size: 13px; font-weight: 500; color: var(--color-primary-hover); margin-bottom: 12px;">
-        {{ plan.price_etb|floatformat:0 }} ETB (Telebirr)
-      </div>
+      {% if user.is_authenticated and is_ethiopia and plan.price_etb %}
+        <div style="font-size: 13px; font-weight: 500; color: var(--color-primary-hover); margin-bottom: 12px;">
+          {{ plan.price_etb|floatformat:0 }} ETB (Telebirr)
+        </div>
+      {% else %}
+        <div style="margin-bottom: 12px;"></div>
+      {% endif %}
 
       <ul class="plan-features">
         <li><strong>{{ plan.pdf_limit }}</strong> Processed PDFs</li>

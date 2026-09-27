@@ -46,6 +46,11 @@
         {% else %}
           <a href="{% url 'subscriptions:my_subscription' %}" style="font-size: 13px; color: var(--color-primary);">Manage Plan &rarr;</a>
         {% endif %}
+        {% if user.is_verified_student %}
+          <div style="margin-top: 6px; font-size: 12px; color: var(--color-success); font-weight: 600;">25% Student Discount Active</div>
+        {% else %}
+          <div style="margin-top: 6px;"><a href="{% url 'accounts:student_verification' %}" style="font-size: 12px; color: var(--color-text-subtle);">Student? Get 25% off &rarr;</a></div>
+        {% endif %}
       </div>
     </div>
   </div>

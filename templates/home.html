@@ -52,7 +52,6 @@
         {% endif %}
         <h3>{{ plan.name }}</h3>
         <div class="plan-price">${{ plan.price|floatformat:0 }} <span class="plan-currency-sub">USD / mo</span></div>
-        <div class="plan-currency-sub">or {{ plan.price_etb|floatformat:0 }} ETB (Telebirr)</div>
         <ul class="plan-features">
           <li><strong>{{ plan.pdf_limit }}</strong> PDF documents / month</li>
           <li>Up to <strong>{{ plan.max_file_size_mb }} MB</strong> per document</li>

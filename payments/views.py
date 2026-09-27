@@ -10,16 +10,21 @@ from .forms import TelebirrVerificationForm
 from .models import Payment
 from .services import PaymentService
 from subscriptions.models import SubscriptionPlan
+from subscriptions.services import PricingCalculator
 
 
 @login_required
 def checkout_view(request, plan_code):
     plan = get_object_or_404(SubscriptionPlan, code=plan_code, active=True)
     user = request.user
-    is_ethiopia = (user.country.lower() == 'ethiopia')
+
+    # Server determines country from authenticated user record
+    is_ethiopia = (user.country.strip().lower() == 'ethiopia')
+    pricing = PricingCalculator.calculate(plan, user)
 
     context = {
         'plan': plan,
+        'pricing': pricing,
         'is_ethiopia': is_ethiopia,
         'telebirr_phone': getattr(settings, 'TELEBIRR_RECEIVER_PHONE', '0911000000'),
         'telebirr_merchant': getattr(settings, 'TELEBIRR_MERCHANT_NAME', 'Humatron Technologies'),
@@ -31,6 +36,10 @@ def checkout_view(request, plan_code):
 
 @login_required
 def verify_telebirr_view(request, plan_code):
+    # Strict server verification of country: Section 5
+    if request.user.country.strip().lower() != 'ethiopia':
+        return HttpResponseForbidden("Telebirr verification is only available for accounts registered in Ethiopia.")
+
     plan = get_object_or_404(SubscriptionPlan, code=plan_code, active=True)
     if request.method == 'POST':
         form = TelebirrVerificationForm(request.POST)
@@ -49,7 +58,8 @@ def verify_telebirr_view(request, plan_code):
     else:
         form = TelebirrVerificationForm()
 
-    return render(request, 'payments/telebirr_verify.html', {'plan': plan, 'form': form})
+    pricing = PricingCalculator.calculate(plan, request.user)
+    return render(request, 'payments/telebirr_verify.html', {'plan': plan, 'pricing': pricing, 'form': form})
 
 
 @login_required

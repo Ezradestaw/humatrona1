@@ -10,11 +10,14 @@
   </div>
 
   <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 16px; border-radius: 4px; margin-bottom: 20px;">
-    <strong>Plan:</strong> {{ plan.name }} &bull; <strong>Required Amount:</strong> {{ plan.price_etb|floatformat:2 }} ETB
+    <strong>Plan:</strong> {{ plan.name }} &bull; <strong>Required Amount:</strong> {{ pricing.final_etb|floatformat:2 }} ETB
+    {% if pricing.is_student_discount %}
+      <span class="badge" style="background: #2e7d32; color: #fff; margin-left: 8px;">25% Student Discount Applied</span>
+    {% endif %}
   </div>
 
   <p>
-    After transferring {{ plan.price_etb|floatformat:2 }} ETB via Telebirr, paste the confirmation SMS message received from Telebirr into the field below:
+    After transferring exactly <strong>{{ pricing.final_etb|floatformat:2 }} ETB</strong> via Telebirr, paste the confirmation SMS message received from Telebirr into the field below:
   </p>
 
   <form method="post" action="{% url 'payments:verify_telebirr' plan.code %}" novalidate style="margin-top: 20px;">
@@ -28,7 +31,7 @@
     </div>
 
     <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 4px; font-size: 13px; color: var(--color-warning); margin-bottom: 20px;">
-      <strong>Notice:</strong> The verification service parses the transaction reference number and verifies that the transferred amount strictly matches or exceeds {{ plan.price_etb|floatformat:2 }} ETB. Duplicate or previously used transaction references will be rejected.
+      <strong>Notice:</strong> The verification service parses the transaction reference number and verifies that the transferred amount strictly matches or exceeds {{ pricing.final_etb|floatformat:2 }} ETB. Duplicate or previously used transaction references will be rejected.
     </div>
 
     <button type="submit" class="btn btn-primary btn-block">

@@ -177,3 +177,56 @@ class EmailService:
             f"{contact_message.message}\n"
         )
         return cls._dispatch_email(admin_email, subject, message, 'contact_message')
+
+    @classmethod
+    def send_educational_verification_email(cls, user, educational_email, request=None):
+        from accounts.tokens import educational_email_token
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = educational_email_token.make_token(user)
+
+        if request:
+            verify_url = request.build_absolute_uri(
+                reverse('accounts:verify_educational_email', kwargs={'uidb64': uid, 'token': token})
+            )
+        else:
+            domain = getattr(settings, 'SITE_DOMAIN', 'humatron.me')
+            path = reverse('accounts:verify_educational_email', kwargs={'uidb64': uid, 'token': token})
+            verify_url = f"https://{domain}{path}"
+
+        subject = "Humatron: Verify your student educational email"
+        message = (
+            f"Dear {user.first_name or user.username},\n\n"
+            f"We received a request to verify this educational email address ({educational_email}) "
+            f"for your Humatron student discount (25% off).\n\n"
+            f"Please click the link below to verify your educational email:\n"
+            f"{verify_url}\n\n"
+            f"This link is single-use and will expire for your security.\n\n"
+            f"Regards,\nHumatron Verification Team\nhttps://humatron.me"
+        )
+        return cls._dispatch_email(educational_email, subject, message, 'email_verification', user=user)
+
+    @classmethod
+    def send_student_verification_approved_email(cls, user):
+        subject = "Humatron: Your 25% Student Discount Has Been Approved!"
+        message = (
+            f"Dear {user.first_name or user.username},\n\n"
+            f"Congratulations! Your student status has been reviewed and verified by our administration team.\n\n"
+            f"A 25% discount is now active on your account and will automatically apply to your subscription checkout.\n\n"
+            f"View subscription plans here:\n"
+            f"https://humatron.me/subscriptions/\n\n"
+            f"Regards,\nHumatron Billing Team"
+        )
+        return cls._dispatch_email(user.email, subject, message, 'subscription_activated', user=user)
+
+    @classmethod
+    def send_student_verification_rejected_email(cls, user, reason):
+        subject = "Humatron: Student Verification Status Update"
+        message = (
+            f"Dear {user.first_name or user.username},\n\n"
+            f"Thank you for submitting your student verification. Unfortunately, your submission could not be approved at this time.\n\n"
+            f"Reason: {reason}\n\n"
+            f"You may submit an updated, valid student ID with current expiration date via your profile:\n"
+            f"https://humatron.me/accounts/student-verification/\n\n"
+            f"Regards,\nHumatron Verification Team"
+        )
+        return cls._dispatch_email(user.email, subject, message, 'payment_failed', user=user)
