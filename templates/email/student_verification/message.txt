@@ -1,0 +1,18 @@
+Dear {{ user.first_name|default:user.username }},
+
+{{ student_headline }}
+
+{{ student_message }}
+
+{% if verify_url %}
+Please verify your educational email by clicking the link below:
+{{ verify_url }}
+{% endif %}
+
+Manage your student verification status at:
+https://humatron.me/accounts/student-verification/
+
+Regards,
+Humatron Verification Team
+support@humatron.me
+https://humatron.me

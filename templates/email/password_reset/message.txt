@@ -1,0 +1,15 @@
+Dear {{ user.first_name|default:user.username }},
+
+We received a request to reset your password on Humatron.
+
+To choose a new password, click the link below:
+{% if reset_url %}{{ reset_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'accounts:password_reset_confirm' uidb64=uid token=token %}{% endif %}
+
+This password-reset link is single-use and will expire.
+
+If you did not request this password reset, your password remains secure and you can safely ignore this email.
+
+Regards,
+Humatron Support Team
+support@humatron.me
+https://humatron.me

@@ -34,7 +34,7 @@ venv.bak/
 
 # Environment variables
 .env
-.env.local
+.env.*
 
 # Django
 *.log

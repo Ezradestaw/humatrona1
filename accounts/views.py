@@ -203,8 +203,10 @@ def profile_view(request):
 # Password Reset Views with Humatron Templates
 class CustomPasswordResetView(BasePasswordResetView):
     template_name = 'accounts/password_reset.html'
-    email_template_name = 'accounts/password_reset_email.txt'
-    subject_template_name = 'accounts/password_reset_subject.txt'
+    email_template_name = 'email/password_reset/message.txt'
+    html_email_template_name = 'email/password_reset/message.html'
+    subject_template_name = 'email/password_reset/subject.txt'
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Humatron Support <support@humatron.me>')
     success_url = reverse_lazy('accounts:password_reset_done')
 
 

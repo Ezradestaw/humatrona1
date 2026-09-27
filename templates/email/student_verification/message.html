@@ -1,0 +1,27 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Student Verification Update{% endblock %}
+
+{% block content %}
+<h2>{{ student_headline }}</h2>
+<p>Dear {{ user.first_name|default:user.username }},</p>
+<p>{{ student_message }}</p>
+
+{% if verify_url %}
+<p style="text-align: center; margin: 24px 0;">
+  <a href="{{ verify_url }}" class="btn">Verify Educational Email</a>
+</p>
+<p style="font-size: 13px; color: #64748b;">
+  If the button does not work, use this link:<br>
+  <a href="{{ verify_url }}" style="word-break: break-all; color: #0f172a;">{{ verify_url }}</a>
+</p>
+{% endif %}
+
+<div class="callout">
+  Verified students enjoy an automatic <strong>25% discount</strong> on all Humatron subscription plans.
+</div>
+
+<p style="text-align: center; margin-top: 24px;">
+  <a href="https://humatron.me/accounts/student-verification/" class="btn" style="background-color: #334155;">View Student Verification Status</a>
+</p>
+{% endblock %}

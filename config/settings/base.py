@@ -165,15 +165,31 @@ CELERY_TASK_TIME_LIMIT = env('MAX_PROCESSING_TIME_SECONDS', default=180) + 30
 CELERY_TASK_ALWAYS_EAGER = env.bool('CELERY_TASK_ALWAYS_EAGER', default=False)
 CELERY_TASK_EAGER_PROPAGATES = True
 
-# Email Configuration
-EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = env('EMAIL_HOST', default='localhost')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='Humatron PDF <noreply@humatron.me>')
+# SMTP Email Configuration (Namecheap Private Email)
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+SMTP_HOST = env('SMTP_HOST', default='mail.privateemail.com')
+SMTP_PORT = env.int('SMTP_PORT', default=587)
+SMTP_USE_TLS = env.bool('SMTP_USE_TLS', default=True)
+
+EMAIL_HOST = SMTP_HOST
+EMAIL_PORT = SMTP_PORT
+EMAIL_USE_TLS = SMTP_USE_TLS
+
+# Dedicated Humatron Email Accounts
+SUPPORT_EMAIL = env('SUPPORT_EMAIL', default='support@humatron.me')
+SUPPORT_EMAIL_APP_PASSWORD = env('SUPPORT_EMAIL_APP_PASSWORD', default='')
+
+CONTACT_EMAIL = env('CONTACT_EMAIL', default='contact@humatron.me')
+CONTACT_EMAIL_APP_PASSWORD = env('CONTACT_EMAIL_APP_PASSWORD', default='')
+
 ADMIN_EMAIL = env('ADMIN_EMAIL', default='admin@humatron.me')
+
+# Standard Django SMTP uses the primary transactional support mailbox
+EMAIL_HOST_USER = SUPPORT_EMAIL
+EMAIL_HOST_PASSWORD = SUPPORT_EMAIL_APP_PASSWORD
+
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default=f"Humatron Support <{SUPPORT_EMAIL}>")
+DEFAULT_CONTACT_FROM_EMAIL = env('DEFAULT_CONTACT_FROM_EMAIL', default=f"Humatron Contact <{CONTACT_EMAIL}>")
 
 # Site Domain
 SITE_DOMAIN = 'humatron.me'
@@ -183,6 +199,8 @@ MAX_UPLOAD_SIZE_MB = env.int('MAX_UPLOAD_SIZE_MB', default=50)
 MAX_PAGES = env.int('MAX_PAGES', default=200)
 MAX_PROCESSING_TIME_SECONDS = env.int('MAX_PROCESSING_TIME_SECONDS', default=180)
 FILE_RETENTION_DAYS = env.int('FILE_RETENTION_DAYS', default=7)
+PDF_RENDER_DPI = env.int('PDF_RENDER_DPI', default=150)
+
 
 # Payments Configuration
 PAYPAL_MODE = env('PAYPAL_MODE', default='sandbox')

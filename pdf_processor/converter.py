@@ -1,8 +1,11 @@
+import io
 import os
 import shutil
 import tempfile
 import logging
+from PIL import Image
 import pymupdf
+from django.conf import settings
 
 logger = logging.getLogger('humatron')
 
@@ -13,9 +16,14 @@ class PDFConversionError(Exception):
 
 class PDFToImagePDFConverter:
     """
-    High-performance, memory-efficient PDF page-to-image flattener (Sections 15, 17).
-    Renders every page of input PDF as a raster image and constructs a new PDF
-    preserving the exact original page dimensions while flattening all vector/text layers.
+    High-performance, memory-efficient PDF page-to-image flattener (Sections 20-29).
+    Pipeline:
+    1. Render each page of input PDF as a raster bitmap at configured DPI.
+    2. Convert bitmap to PIL RGBA image.
+    3. Create a genuine transparent RGBA layer (alpha = 0).
+    4. Combine image and transparent layer via alpha_composite operation.
+    5. Construct a new PDF page preserving the exact original page dimensions.
+    6. Flatten all vector, font, and text layers into pure image pixels.
     Processes pages in a chunked/streaming loop to minimize RAM footprint.
     """
 
@@ -27,7 +35,8 @@ class PDFToImagePDFConverter:
         Executes conversion inside an isolated temporary directory.
         Returns dictionary with {page_count, output_size_bytes}.
         """
-        render_dpi = dpi or cls.DEFAULT_DPI
+        configured_dpi = getattr(settings, 'PDF_RENDER_DPI', cls.DEFAULT_DPI)
+        render_dpi = dpi or configured_dpi
         temp_dir = tempfile.mkdtemp(prefix="humatron_proc_")
 
         in_doc = None
@@ -47,21 +56,45 @@ class PDFToImagePDFConverter:
             # Create destination PDF document
             out_doc = pymupdf.open()
 
-            # Process page by page (chunked streaming)
+            # Process page by page (chunked streaming for memory efficiency)
             for page_idx in range(page_count):
                 page = in_doc[page_idx]
                 rect = page.rect
 
-                # Render page to bitmap at specified DPI
+                # 1. Render page to bitmap at specified DPI
                 pix = page.get_pixmap(dpi=render_dpi)
-                img_bytes = pix.tobytes("jpeg")
+
+                # 2. Convert PyMuPDF pixmap to PIL RGBA image (Section 23)
+                if pix.alpha:
+                    base_image = Image.frombytes("RGBA", (pix.width, pix.height), pix.samples)
+                else:
+                    base_image = Image.frombytes("RGB", (pix.width, pix.height), pix.samples).convert("RGBA")
 
                 # Release pixmap memory immediately
                 pix = None
 
-                # Create page matching original dimensions (in points)
+                # 3. Create genuine transparent layer with alpha=0 (Section 21, 24)
+                transparent_layer = Image.new("RGBA", base_image.size, (0, 0, 0, 0))
+
+                # 4. Alpha composite operation combining image and transparent layer (Section 21)
+                composited_image = Image.alpha_composite(base_image, transparent_layer)
+
+                # 5. Convert composited image into final page raster image bytes
+                final_rgb = composited_image.convert("RGB")
+                img_buffer = io.BytesIO()
+                final_rgb.save(img_buffer, format="JPEG", quality=92, optimize=True)
+                img_bytes = img_buffer.getvalue()
+
+                # Clean up intermediate PIL images and buffer immediately
+                base_image.close()
+                transparent_layer.close()
+                composited_image.close()
+                final_rgb.close()
+                img_buffer.close()
+
+                # 6. Create page matching original dimensions (in points)
                 new_page = out_doc.new_page(width=rect.width, height=rect.height)
-                # Insert rendered image to completely occupy original page boundaries
+                # 7. Insert rendered raster image to completely occupy original page boundaries
                 new_page.insert_image(rect, stream=img_bytes)
 
                 # Dereference image bytes

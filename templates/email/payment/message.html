@@ -1,0 +1,38 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Humatron Payment Receipt{% endblock %}
+
+{% block content %}
+<h2>Payment Receipt</h2>
+<p>Dear {{ user.first_name|default:user.username }},</p>
+<p>Thank you for your payment. Your transaction has been verified successfully.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+  <tr style="border-bottom: 1px solid #e2e8f0;">
+    <td style="padding: 8px 0; color: #64748b;">Provider</td>
+    <td style="padding: 8px 0; text-align: right; font-weight: 600;">{{ payment.provider|upper }}</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #e2e8f0;">
+    <td style="padding: 8px 0; color: #64748b;">Transaction Reference</td>
+    <td style="padding: 8px 0; text-align: right; font-family: monospace;">{{ payment.transaction_id }}</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #e2e8f0;">
+    <td style="padding: 8px 0; color: #64748b;">Plan</td>
+    <td style="padding: 8px 0; text-align: right; font-weight: 600;">{{ payment.plan.name }}</td>
+  </tr>
+  {% if payment.student_discount_applied %}
+  <tr style="border-bottom: 1px solid #e2e8f0;">
+    <td style="padding: 8px 0; color: #64748b;">Student Discount</td>
+    <td style="padding: 8px 0; text-align: right; color: #059669; font-weight: 600;">25% Off (Original: {{ payment.currency }} {{ payment.original_amount }})</td>
+  </tr>
+  {% endif %}
+  <tr>
+    <td style="padding: 12px 0; font-weight: 700; font-size: 16px;">Total Paid</td>
+    <td style="padding: 12px 0; text-align: right; font-weight: 700; font-size: 18px; color: #0f172a;">{{ payment.currency }} {{ payment.amount }}</td>
+  </tr>
+</table>
+
+<p style="text-align: center; margin-top: 24px;">
+  <a href="https://humatron.me/payments/history/" class="btn">View Payment History</a>
+</p>
+{% endblock %}

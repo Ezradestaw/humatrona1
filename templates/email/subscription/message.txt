@@ -1,0 +1,22 @@
+Dear {{ user.first_name|default:user.username }},
+
+{{ status_headline }}
+
+Subscription Details:
+- Plan: {{ subscription.plan.name }}
+- Document Limit: {{ subscription.pdf_limit }} PDFs
+- Max File Size: {{ subscription.plan.max_file_size_mb }} MB
+- Max Pages per PDF: {{ subscription.plan.max_pages_per_pdf }} pages
+- Start Date: {{ subscription.start_date|date:"Y-m-d" }}
+- Expiration Date: {{ subscription.end_date|date:"Y-m-d" }}
+{% if subscription.student_discount_applied %}
+- Verified Student Discount: 25% Applied
+{% endif %}
+
+Manage your subscription and view usage at:
+https://humatron.me/subscriptions/my-subscription/
+
+Regards,
+Humatron Billing Team
+support@humatron.me
+https://humatron.me

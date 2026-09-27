@@ -1,0 +1,19 @@
+Dear {{ user.first_name|default:user.username }},
+
+We have received and verified your payment for your Humatron subscription.
+
+Receipt Summary:
+- Payment Provider: {{ payment.provider|upper }}
+- Transaction ID: {{ payment.transaction_id }}
+- Amount: {{ payment.currency }} {{ payment.amount }}
+{% if payment.student_discount_applied %}
+- Student Discount: 25% Applied (Original: {{ payment.currency }} {{ payment.original_amount }})
+{% endif %}
+- Date: {{ payment.verified_at|date:"Y-m-d H:i" }} UTC
+
+View your payment history at https://humatron.me/payments/history/
+
+Regards,
+Humatron Accounts Team
+support@humatron.me
+https://humatron.me

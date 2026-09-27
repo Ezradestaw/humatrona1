@@ -1,0 +1,1 @@
+Humatron: Subscription Notification ({{ subscription.plan.name }})

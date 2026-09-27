@@ -1,0 +1,24 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Verify your Humatron account{% endblock %}
+
+{% block content %}
+<h2>Verify your email address</h2>
+<p>Dear {{ user.first_name|default:user.username }},</p>
+<p>Thank you for registering on <strong>Humatron</strong>. To complete your registration and activate your account, please verify your email address:</p>
+
+<p style="text-align: center; margin: 24px 0;">
+  <a href="{{ verify_url }}" class="btn">Verify Email Address</a>
+</p>
+
+<div class="callout">
+  <strong>Security Notice:</strong> This activation link is cryptographically signed, single-use, and will expire for your security.
+</div>
+
+<p style="font-size: 13px; color: #64748b;">
+  If the button above does not work, copy and paste this URL into your browser:<br>
+  <a href="{{ verify_url }}" style="word-break: break-all; color: #0f172a;">{{ verify_url }}</a>
+</p>
+
+<p>If you did not create an account on Humatron, no further action is required and you may safely disregard this email.</p>
+{% endblock %}

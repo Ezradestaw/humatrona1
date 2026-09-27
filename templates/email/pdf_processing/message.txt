@@ -1,0 +1,18 @@
+Dear {{ user.first_name|default:user.username }},
+
+Your document '{{ job.original_filename }}' has been converted into an image-based PDF successfully.
+
+Job Details:
+- Original Filename: {{ job.original_filename }}
+- Total Pages: {{ job.page_count }}
+- Processed: {{ job.completed_at|date:"Y-m-d H:i" }} UTC
+
+Download your document here (requires login):
+{{ download_url }}
+
+Note: Processed files are securely retained for 7 days before permanent removal.
+
+Regards,
+Humatron PDF Service
+support@humatron.me
+https://humatron.me

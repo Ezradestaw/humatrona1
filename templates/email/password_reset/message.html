@@ -1,0 +1,26 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Humatron Password Reset Request{% endblock %}
+
+{% block content %}
+<h2>Password Reset Request</h2>
+<p>Dear {{ user.first_name|default:user.username }},</p>
+<p>We received a request to reset your password on your Humatron account.</p>
+
+<p style="text-align: center; margin: 24px 0;">
+  <a href="{% if reset_url %}{{ reset_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'accounts:password_reset_confirm' uidb64=uid token=token %}{% endif %}" class="btn">Reset Your Password</a>
+</p>
+
+<div class="callout">
+  <strong>Notice:</strong> This password-reset link is single-use, expires shortly, and will be invalidated once used.
+</div>
+
+<p style="font-size: 13px; color: #64748b;">
+  If the button does not work, copy and paste this link into your browser:<br>
+  <a href="{% if reset_url %}{{ reset_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'accounts:password_reset_confirm' uidb64=uid token=token %}{% endif %}" style="word-break: break-all; color: #0f172a;">
+    {% if reset_url %}{{ reset_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'accounts:password_reset_confirm' uidb64=uid token=token %}{% endif %}
+  </a>
+</p>
+
+<p>If you did not initiate this request, your account remains secure and no changes have been made.</p>
+{% endblock %}

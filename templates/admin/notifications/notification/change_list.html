@@ -1,0 +1,8 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  <li>
+    <a href="smtp-test/" class="historylink" style="background: #0f172a; color: #fff;">Send SMTP Test Email</a>
+  </li>
+  {{ block.super }}
+{% endblock %}
