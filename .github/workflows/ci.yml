@@ -1,0 +1,93 @@
+name: Humatron CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Build, Lint, Security & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: humatron_test_db
+          POSTGRES_USER: humatron_user
+          POSTGRES_PASSWORD: humatron_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmupdf-dev
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 bandit
+
+      - name: Code Quality & Linting
+        run: |
+          # Stop build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=venv,.pgdata,staticfiles,media
+          # Exit-zero treat all errors as warnings
+          flake8 . --count --exit-zero --max-complexity=15 --max-line-length=130 --statistics --exclude=venv,.pgdata,staticfiles,media
+
+      - name: Security Scan (Bandit)
+        run: |
+          bandit -r accounts/ subscriptions/ payments/ pdf_processor/ notifications/ contact/ usage/ audit/ -ll -x venv/,.pgdata/
+
+      - name: Run Database Migrations
+        env:
+          DJANGO_SECRET_KEY: ci-testing-secret-key-humatron-98471928471
+          DATABASE_URL: postgresql://humatron_user:humatron_password@localhost:5432/humatron_test_db
+          REDIS_URL: redis://127.0.0.1:6379/0
+        run: |
+          python manage.py migrate
+
+      - name: Seed Subscription Plans
+        env:
+          DJANGO_SECRET_KEY: ci-testing-secret-key-humatron-98471928471
+          DATABASE_URL: postgresql://humatron_user:humatron_password@localhost:5432/humatron_test_db
+          REDIS_URL: redis://127.0.0.1:6379/0
+        run: |
+          python manage.py seed_plans
+
+      - name: Run Test Suite
+        env:
+          DJANGO_SECRET_KEY: ci-testing-secret-key-humatron-98471928471
+          DATABASE_URL: postgresql://humatron_user:humatron_password@localhost:5432/humatron_test_db
+          REDIS_URL: redis://127.0.0.1:6379/0
+        run: |
+          python manage.py test tests

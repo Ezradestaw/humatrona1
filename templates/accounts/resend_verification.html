@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Resend Verification Email — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 480px; margin: 0 auto;">
+  <h1>Resend Verification Email</h1>
+  <p>Enter the email address registered with your account to receive a new activation link.</p>
+
+  <form method="post" action="{% url 'accounts:resend_verification' %}" style="margin-top: 20px;">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="form-label" for="resend-email">Email Address</label>
+      <input type="email" id="resend-email" name="email" class="form-input" required placeholder="name@example.com">
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">
+      Send Verification Link
+    </button>
+  </form>
+
+  <div style="margin-top: 20px; text-align: center; font-size: 14px;">
+    <a href="{% url 'accounts:login' %}">Back to Login</a>
+  </div>
+</div>
+{% endblock %}

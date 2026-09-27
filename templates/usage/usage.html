@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Usage Tracking — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="panel-header">
+    <h1>Usage Tracking</h1>
+    <a href="{% url 'pdf_processor:upload' %}" class="btn btn-primary btn-sm">Process Document</a>
+  </div>
+
+  <p>Detailed log of every document conversion that has consumed processing quota from your trial or subscription.</p>
+
+  {% if subscription %}
+    <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 16px; border-radius: 4px; margin: 16px 0;">
+      <strong>Current Cycle:</strong> {{ subscription.plan.name }} &bull;
+      <strong>Used:</strong> {{ subscription.used_count }} / {{ subscription.pdf_limit }} &bull;
+      <strong>Remaining:</strong> {{ subscription.remaining_quota }}
+    </div>
+  {% endif %}
+
+  {% if records %}
+    <div class="table-responsive" style="margin-top: 20px;">
+      <table class="formal-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Type</th>
+            <th>Associated Plan</th>
+            <th>Document</th>
+            <th>Quantity Deducted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+            <tr>
+              <td>{{ record.timestamp|date:"Y-m-d H:i:s" }}</td>
+              <td>
+                <span class="badge {% if record.usage_type == 'subscription' %}badge-active{% else %}badge-info{% endif %}">
+                  {{ record.get_usage_type_display }}
+                </span>
+              </td>
+              <td>{{ record.subscription.plan.name|default:"Free Trial" }}</td>
+              <td>{{ record.processing_job.original_filename }}</td>
+              <td>{{ record.quantity }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p style="text-align: center; padding: 36px 20px; color: var(--color-text-subtle);">
+      No usage records recorded yet.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

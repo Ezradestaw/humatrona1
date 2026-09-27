@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}My Subscription — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="panel-header">
+    <h1>Current Subscription</h1>
+    <div>
+      <a href="{% url 'subscriptions:plans' %}" class="btn btn-primary btn-sm">Change / Renew Plan</a>
+      <a href="{% url 'payments:history' %}" class="btn btn-secondary btn-sm" style="margin-left: 8px;">View Payment History</a>
+    </div>
+  </div>
+
+  {% if subscription %}
+    <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 24px; border-radius: 4px; margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <span style="font-size: 13px; color: var(--color-text-subtle); text-transform: uppercase; font-weight: 600;">Active Plan</span>
+          <h2 style="font-size: 26px; color: var(--color-primary); margin-top: 4px;">{{ subscription.plan.name }}</h2>
+          <div style="margin-top: 6px;">
+            <span class="badge badge-active">{{ subscription.get_status_display }}</span>
+            <span style="font-size: 13px; color: var(--color-text-subtle); margin-left: 10px;">Paid via {{ subscription.payment_method|default:"Online" }}</span>
+          </div>
+        </div>
+
+        <div style="text-align: right;">
+          <div style="font-size: 13px; color: var(--color-text-subtle);">Expiration Date</div>
+          <div style="font-size: 18px; font-weight: 600; color: var(--color-text); margin-top: 4px;">
+            {{ subscription.end_date|date:"F d, Y" }}
+          </div>
+          <div style="font-size: 12px; color: var(--color-text-subtle); margin-top: 2px;">
+            Started {{ subscription.start_date|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--color-border);">
+        <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">PDF Document Allowance</div>
+        <div style="font-size: 28px; font-weight: 700; color: var(--color-primary);">
+          {{ subscription.used_count }} / {{ subscription.pdf_limit }}
+        </div>
+        <div style="font-size: 14px; color: var(--color-text-muted); margin-top: 4px;">
+          <strong>{{ subscription.used_count }}</strong> processed &bull; <strong>{{ subscription.remaining_quota }}</strong> remaining
+        </div>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <a href="{% url 'subscriptions:cancel_subscription' subscription.id %}" style="font-size: 13px; color: var(--color-danger); text-decoration: underline;">
+          Cancel subscription
+        </a>
+      </div>
+    </div>
+  {% elif trial_available %}
+    <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 24px; border-radius: 4px; margin-bottom: 24px;">
+      <span class="badge badge-active">Active Free Trial</span>
+      <h2 style="font-size: 24px; color: var(--color-primary); margin-top: 8px;">1 Free PDF Conversion Available</h2>
+      <p style="margin-top: 8px;">You can upload and convert one PDF document for free. After your trial document is processed, choose a subscription to continue.</p>
+      <div style="margin-top: 16px;">
+        <a href="{% url 'pdf_processor:upload' %}" class="btn btn-primary">Process Your Free Trial PDF</a>
+      </div>
+    </div>
+  {% else %}
+    <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 24px; border-radius: 4px; margin-bottom: 24px;">
+      <h2 style="color: var(--color-danger);">No Active Subscription</h2>
+      <p style="margin-top: 8px;">Your free trial or previous subscription has ended. Select a plan to resume document conversion.</p>
+      <div style="margin-top: 16px;">
+        <a href="{% url 'subscriptions:plans' %}" class="btn btn-primary">Browse Subscription Plans</a>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="panel-header" style="margin-top: 32px;">
+    <h2>Subscription History</h2>
+  </div>
+
+  {% if all_subscriptions %}
+    <div class="table-responsive">
+      <table class="formal-table">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Status</th>
+            <th>Quota Used</th>
+            <th>Started</th>
+            <th>Ended</th>
+            <th>Payment Method</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in all_subscriptions %}
+            <tr>
+              <td><strong>{{ sub.plan.name }}</strong></td>
+              <td>
+                <span class="badge {% if sub.status == 'ACTIVE' %}badge-active{% elif sub.status == 'CANCELLED' %}badge-cancelled{% else %}badge-expired{% endif %}">
+                  {{ sub.get_status_display }}
+                </span>
+              </td>
+              <td>{{ sub.used_count }} / {{ sub.pdf_limit }}</td>
+              <td>{{ sub.start_date|date:"Y-m-d"|default:"—" }}</td>
+              <td>{{ sub.end_date|date:"Y-m-d"|default:"—" }}</td>
+              <td>{{ sub.payment_method|default:"N/A" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p style="color: var(--color-text-subtle);">No previous subscriptions recorded.</p>
+  {% endif %}
+</div>
+{% endblock %}

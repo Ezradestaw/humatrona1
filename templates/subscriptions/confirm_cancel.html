@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Cancel Subscription — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 500px; margin: 0 auto; text-align: center; padding: 32px 20px;">
+  <div class="badge badge-failed" style="font-size: 13px; margin-bottom: 12px;">Confirm Action</div>
+  <h1>Cancel Subscription</h1>
+  <p>Are you sure you wish to cancel your <strong>{{ subscription.plan.name }}</strong> subscription? You will forfeit remaining processing quota for this cycle.</p>
+
+  <form method="post" style="margin-top: 24px;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+    <a href="{% url 'subscriptions:my_subscription' %}" class="btn btn-secondary" style="margin-left: 10px;">Keep Active</a>
+  </form>
+</div>
+{% endblock %}

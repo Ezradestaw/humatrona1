@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Document Deletion — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 520px; margin: 0 auto; text-align: center; padding: 32px 20px;">
+  <div class="badge badge-failed" style="font-size: 13px; margin-bottom: 12px;">Delete Document</div>
+  <h1>Delete Document</h1>
+  <p>Are you sure you want to permanently delete <strong>{{ job.original_filename }}</strong>? Both uploaded and converted files will be purged from our server immediately.</p>
+
+  <form method="post" style="margin-top: 24px;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Permanently Delete</button>
+    <a href="{% url 'pdf_processor:history' %}" class="btn btn-secondary" style="margin-left: 10px;">Cancel</a>
+  </form>
+</div>
+{% endblock %}

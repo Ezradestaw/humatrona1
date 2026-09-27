@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}429 — Rate Limit Exceeded — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 520px; margin: 40px auto; text-align: center; padding: 40px 24px;">
+  <div class="badge badge-warning" style="font-size: 14px; padding: 6px 12px; margin-bottom: 16px;">Error 429</div>
+  <h1>Too Many Requests</h1>
+  <p>You have exceeded the allowed rate limit for this action to protect server security.</p>
+  {% if retry_after %}
+    <p style="font-size: 13px; color: var(--color-text-subtle);">Please wait approximately {{ retry_after }} seconds before trying again.</p>
+  {% endif %}
+  <div style="margin-top: 24px;">
+    <a href="{% url 'home' %}" class="btn btn-secondary">Return to Home</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Processing Document: {{ job.original_filename }} — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 680px; margin: 0 auto;" id="job-status-tracker" data-job-id="{{ job.id }}">
+  <div class="panel-header">
+    <div>
+      <span style="font-size: 12px; color: var(--color-text-subtle); text-transform: uppercase;">Job #{{ job.id|stringformat:".8s" }}</span>
+      <h1 style="font-size: 22px; margin-top: 4px;">{{ job.original_filename }}</h1>
+    </div>
+    <div id="job-status-badge">
+      {% if job.status == 'COMPLETED' %}
+        <span class="badge badge-completed">Completed</span>
+      {% elif job.status == 'PROCESSING' %}
+        <span class="badge badge-processing">Processing...</span>
+      {% elif job.status == 'QUEUED' %}
+        <span class="badge badge-queued">Queued</span>
+      {% elif job.status == 'FAILED' %}
+        <span class="badge badge-failed">Failed</span>
+      {% else %}
+        <span class="badge badge-expired">Expired</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 18px; border-radius: 4px; margin-bottom: 24px;">
+    <div class="grid-2">
+      <div>
+        <p style="font-size: 13px; margin-bottom: 4px;"><strong>Original File Size:</strong> {{ job.input_size_formatted }}</p>
+        <p style="font-size: 13px; margin-bottom: 4px;"><strong>Pages:</strong> {{ job.page_count|default:"Estimating..." }}</p>
+        <p style="font-size: 13px; margin-bottom: 0;"><strong>Submission Time:</strong> {{ job.created_at|date:"Y-m-d H:i:s" }} UTC</p>
+      </div>
+      <div>
+        <p style="font-size: 13px; margin-bottom: 4px;"><strong>Current Status:</strong> <span id="job-status-text">{{ job.status }}</span></p>
+        <p style="font-size: 13px; margin-bottom: 4px;"><strong>Processed Size:</strong> {{ job.output_size_formatted|default:"—" }}</p>
+        <p style="font-size: 13px; margin-bottom: 0;"><strong>Downloads:</strong> {{ job.download_count }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# Success Download Box (Section 19) #}
+  <div id="job-download-container" style="{% if not job.is_downloadable %}display: none;{% endif %} text-align: center; padding: 24px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; margin-bottom: 24px;">
+    <h3 style="color: var(--color-success); margin-bottom: 8px;">Processing Complete</h3>
+    <p style="font-size: 14px; margin-bottom: 16px;">
+      All pages have been flattened into raster images and reconstructed into your new PDF document.
+    </p>
+    <a id="job-download-link" href="{% if job.is_downloadable %}{% url 'pdf_processor:download' job.id %}{% else %}#{% endif %}" class="btn btn-primary" style="padding: 10px 24px; font-size: 15px;">
+      Download Processed PDF
+    </a>
+  </div>
+
+  {# Error Box #}
+  <div id="job-error-container" style="{% if job.status != 'FAILED' %}display: none;{% endif %} padding: 20px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; margin-bottom: 24px;">
+    <h3 style="color: var(--color-danger); margin-bottom: 6px;">Conversion Failed</h3>
+    <p id="job-error-text" style="font-size: 14px; color: var(--color-danger); margin-bottom: 12px;">
+      {{ job.error_message|default:"An unexpected error occurred while processing the document." }}
+    </p>
+    <a href="{% url 'pdf_processor:upload' %}" class="btn btn-secondary btn-sm">Try Another Document</a>
+  </div>
+
+  {% if job.status == 'QUEUED' or job.status == 'PROCESSING' %}
+    <div style="font-size: 13px; color: var(--color-text-subtle); text-align: center; margin-bottom: 20px;">
+      <span style="display: inline-block; width: 8px; height: 8px; background-color: var(--color-info); border-radius: 50%; margin-right: 6px;"></span>
+      Processing in background worker. This page will update automatically.
+    </div>
+  {% endif %}
+
+  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 16px;">
+    <a href="{% url 'pdf_processor:history' %}" class="btn btn-secondary btn-sm">&larr; Back to History</a>
+    <a href="{% url 'pdf_processor:delete' job.id %}" style="font-size: 13px; color: var(--color-danger); text-decoration: underline;">
+      Delete Document
+    </a>
+  </div>
+</div>
+{% endblock %}

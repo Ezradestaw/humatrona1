@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}400 — Bad Request — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 520px; margin: 40px auto; text-align: center; padding: 40px 24px;">
+  <div class="badge badge-failed" style="font-size: 14px; padding: 6px 12px; margin-bottom: 16px;">Error 400</div>
+  <h1>Bad Request</h1>
+  <p>The request could not be processed by the server due to invalid syntax or parameters.</p>
+  <div style="margin-top: 24px;">
+    <a href="{% url 'home' %}" class="btn btn-primary">Return to Home</a>
+  </div>
+</div>
+{% endblock %}

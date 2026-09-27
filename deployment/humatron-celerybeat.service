@@ -1,0 +1,19 @@
+[Unit]
+Description=Humatron Celery Beat Periodic Scheduler
+After=network.target humatron-celery.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/humatron
+EnvironmentFile=/var/www/humatron/.env
+ExecStart=/var/www/humatron/venv/bin/celery -A config beat \
+          --pidfile=/var/run/celery/beat.pid \
+          --logfile=/var/log/celery/beat.log \
+          --loglevel=INFO
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}403 — Forbidden — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 520px; margin: 40px auto; text-align: center; padding: 40px 24px;">
+  <div class="badge badge-failed" style="font-size: 14px; padding: 6px 12px; margin-bottom: 16px;">Error 403</div>
+  <h1>Access Forbidden</h1>
+  <p>You do not have administrative or authorization permissions to access the requested resource.</p>
+  <div style="margin-top: 24px;">
+    <a href="{% url 'accounts:dashboard' %}" class="btn btn-primary">Return to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

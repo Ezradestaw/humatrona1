@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}500 — Server Error — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 520px; margin: 40px auto; text-align: center; padding: 40px 24px;">
+  <div class="badge badge-failed" style="font-size: 14px; padding: 6px 12px; margin-bottom: 16px;">Error 500</div>
+  <h1>Internal Server Error</h1>
+  <p>An unexpected condition occurred on the server. The issue has been recorded and is being investigated by our engineering team.</p>
+  <div style="margin-top: 24px;">
+    <a href="{% url 'home' %}" class="btn btn-primary">Return to Home</a>
+  </div>
+</div>
+{% endblock %}

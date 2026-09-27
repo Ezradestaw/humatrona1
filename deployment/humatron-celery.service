@@ -1,0 +1,28 @@
+[Unit]
+Description=Humatron Celery Background Worker
+After=network.target redis.service postgresql.service
+
+[Service]
+Type=forking
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/humatron
+EnvironmentFile=/var/www/humatron/.env
+ExecStart=/var/www/humatron/venv/bin/celery multi start worker1 \
+          -A config \
+          --pidfile=/var/run/celery/%n.pid \
+          --logfile=/var/log/celery/%n%I.log \
+          --loglevel=INFO \
+          --concurrency=4
+ExecStop=/var/www/humatron/venv/bin/celery multi stopwait worker1 \
+         --pidfile=/var/run/celery/%n.pid
+ExecReload=/var/www/humatron/venv/bin/celery multi restart worker1 \
+           -A config \
+           --pidfile=/var/run/celery/%n.pid \
+           --logfile=/var/log/celery/%n%I.log \
+           --loglevel=INFO
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

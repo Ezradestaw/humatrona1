@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}404 — Page Not Found — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 520px; margin: 40px auto; text-align: center; padding: 40px 24px;">
+  <div class="badge badge-expired" style="font-size: 14px; padding: 6px 12px; margin-bottom: 16px;">Error 404</div>
+  <h1>Resource Not Found</h1>
+  <p>The page or document you requested does not exist or may have been deleted according to our 7-day retention policy.</p>
+  <div style="margin-top: 24px;">
+    <a href="{% url 'home' %}" class="btn btn-primary">Return to Home</a>
+  </div>
+</div>
+{% endblock %}

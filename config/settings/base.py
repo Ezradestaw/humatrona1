@@ -1,0 +1,247 @@
+"""
+Base settings for Humatron PDF Processing SaaS (humatron.me).
+"""
+import os
+from pathlib import Path
+import environ
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+env = environ.Env(
+    DJANGO_DEBUG=(bool, False),
+    DJANGO_ALLOWED_HOSTS=(list, ['humatron.me', 'www.humatron.me', 'localhost', '127.0.0.1']),
+    DJANGO_CSRF_TRUSTED_ORIGINS=(list, ['https://humatron.me', 'https://www.humatron.me']),
+    MAX_UPLOAD_SIZE_MB=(int, 50),
+    MAX_PAGES=(int, 200),
+    MAX_PROCESSING_TIME_SECONDS=(int, 180),
+    FILE_RETENTION_DAYS=(int, 7),
+    TELEBIRR_USD_TO_ETB_RATE=(float, 135.0),
+    TELEBIRR_DEFAULT_PRICE_ETB=(float, 6750.0),
+    SECURE_SSL_REDIRECT=(bool, False),
+    SESSION_COOKIE_SECURE=(bool, False),
+    CSRF_COOKIE_SECURE=(bool, False),
+)
+
+# Take environment variables from .env file if present
+env_file = BASE_DIR / '.env'
+if env_file.exists():
+    environ.Env.read_env(env_file)
+
+SECRET_KEY = env('DJANGO_SECRET_KEY')
+DEBUG = env('DJANGO_DEBUG')
+ALLOWED_HOSTS = env('DJANGO_ALLOWED_HOSTS')
+CSRF_TRUSTED_ORIGINS = env('DJANGO_CSRF_TRUSTED_ORIGINS')
+
+# Application definition
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    # Third party
+    'rest_framework',
+    
+    # Humatron Apps
+    'accounts.apps.AccountsConfig',
+    'subscriptions.apps.SubscriptionsConfig',
+    'payments.apps.PaymentsConfig',
+    'pdf_processor.apps.PdfProcessorConfig',
+    'notifications.apps.NotificationsConfig',
+    'contact.apps.ContactConfig',
+    'usage.apps.UsageConfig',
+    'audit.apps.AuditConfig',
+]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middleware.RateLimitMiddleware',
+]
+
+ROOT_URLCONF = 'config.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'accounts.context_processors.humatron_globals',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
+
+# Database
+# Default: PostgreSQL connection configured via DATABASE_URL
+DATABASES = {
+    'default': env.db('DATABASE_URL')
+}
+
+# Custom User Model
+AUTH_USER_MODEL = 'accounts.User'
+
+# Password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 10},
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+# Internationalization
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
+
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Media files (Uploaded and processed PDFs)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+}
+
+# Redis & Caching
+REDIS_URL = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+    }
+}
+
+# Celery Configuration
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default=REDIS_URL)
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default=REDIS_URL)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = env('MAX_PROCESSING_TIME_SECONDS', default=180) + 30
+
+# Email Configuration
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = env('EMAIL_HOST', default='localhost')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='Humatron PDF <noreply@humatron.me>')
+ADMIN_EMAIL = env('ADMIN_EMAIL', default='admin@humatron.me')
+
+# Site Domain
+SITE_DOMAIN = 'humatron.me'
+
+# PDF Processing & Limits
+MAX_UPLOAD_SIZE_MB = env.int('MAX_UPLOAD_SIZE_MB', default=50)
+MAX_PAGES = env.int('MAX_PAGES', default=200)
+MAX_PROCESSING_TIME_SECONDS = env.int('MAX_PROCESSING_TIME_SECONDS', default=180)
+FILE_RETENTION_DAYS = env.int('FILE_RETENTION_DAYS', default=7)
+
+# Payments Configuration
+PAYPAL_MODE = env('PAYPAL_MODE', default='sandbox')
+PAYPAL_CLIENT_ID = env('PAYPAL_CLIENT_ID', default='')
+PAYPAL_CLIENT_SECRET = env('PAYPAL_CLIENT_SECRET', default='')
+
+TELEBIRR_RECEIVER_PHONE = env('TELEBIRR_RECEIVER_PHONE', default='0911000000')
+TELEBIRR_MERCHANT_NAME = env('TELEBIRR_MERCHANT_NAME', default='Humatron')
+TELEBIRR_USD_TO_ETB_RATE = env.float('TELEBIRR_USD_TO_ETB_RATE', default=135.0)
+TELEBIRR_DEFAULT_PRICE_ETB = env.float('TELEBIRR_DEFAULT_PRICE_ETB', default=6750.0)
+
+# Security & Cookies
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+X_FRAME_OPTIONS = 'DENY'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=False)
+SESSION_COOKIE_SECURE = env.bool('SESSION_COOKIE_SECURE', default=False)
+CSRF_COOKIE_SECURE = env.bool('CSRF_COOKIE_SECURE', default=False)
+
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'accounts:dashboard'
+LOGOUT_REDIRECT_URL = 'accounts:login'
+
+# Structured Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} [{name}:{lineno}] {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'humatron': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Plans — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="text-align: center; padding: 36px 20px;">
+  <h1>Subscription Plans</h1>
+  <p class="lead" style="max-width: 640px; margin: 0 auto;">
+    Choose the right capacity for your PDF conversion needs. All plans include high-resolution rendering, page dimension preservation, and secure 7-day retention.
+  </p>
+  {% if is_ethiopia %}
+    <div class="badge badge-info" style="margin-top: 14px; font-size: 13px; padding: 6px 12px;">
+      Detected Location: Ethiopia &bull; Telebirr payment supported in ETB
+    </div>
+  {% else %}
+    <div class="badge badge-info" style="margin-top: 14px; font-size: 13px; padding: 6px 12px;">
+      Detected Location: {{ user_country }} &bull; Standard international payment via PayPal
+    </div>
+  {% endif %}
+</div>
+
+{% if current_subscription %}
+  <div class="alert alert-info" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      You currently have an active <strong>{{ current_subscription.plan.name }}</strong> plan ({{ current_subscription.remaining_quota }} of {{ current_subscription.pdf_limit }} PDFs remaining).
+    </div>
+    <a href="{% url 'subscriptions:my_subscription' %}" class="btn btn-secondary btn-sm">Manage Active Plan</a>
+  </div>
+{% endif %}
+
+<div class="grid-4" style="margin-top: 24px;">
+  {% for plan in plans %}
+    <div class="plan-card {% if plan.code == 'professional' %}featured{% endif %}">
+      {% if plan.code == 'professional' %}
+        <div class="plan-tag">RECOMMENDED</div>
+      {% endif %}
+      <h2>{{ plan.name }}</h2>
+      <p style="font-size: 13px; min-height: 48px; margin-top: 6px;">{{ plan.description }}</p>
+
+      <div class="plan-price">${{ plan.price|floatformat:0 }} <span class="plan-currency-sub">USD / {{ plan.duration_days }} days</span></div>
+      <div style="font-size: 13px; font-weight: 500; color: var(--color-primary-hover); margin-bottom: 12px;">
+        {{ plan.price_etb|floatformat:0 }} ETB (Telebirr)
+      </div>
+
+      <ul class="plan-features">
+        <li><strong>{{ plan.pdf_limit }}</strong> Processed PDFs</li>
+        <li>Up to <strong>{{ plan.max_file_size_mb }} MB</strong> per file</li>
+        <li>Up to <strong>{{ plan.max_pages_per_pdf }}</strong> pages / document</li>
+        <li>150 DPI Rasterization</li>
+        <li>Asynchronous Celery Processing</li>
+      </ul>
+
+      <a href="{% url 'payments:checkout' plan.code %}" class="btn {% if plan.code == 'professional' %}btn-primary{% else %}btn-secondary{% endif %} btn-block">
+        {% if current_subscription and current_subscription.plan == plan %}
+          Renew This Plan
+        {% else %}
+          Choose {{ plan.name }}
+        {% endif %}
+      </a>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

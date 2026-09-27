@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}PDF Processing History — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="panel-header">
+    <h1>Document Processing History</h1>
+    <a href="{% url 'pdf_processor:upload' %}" class="btn btn-primary btn-sm">Process New PDF</a>
+  </div>
+
+  <p>Track all documents processed under your account. Documents are preserved for 7 days before automatic retention cleanup.</p>
+
+  {% if jobs %}
+    <div class="table-responsive" style="margin-top: 20px;">
+      <table class="formal-table">
+        <thead>
+          <tr>
+            <th>Document Name</th>
+            <th>Pages</th>
+            <th>Original Size</th>
+            <th>Flattened Size</th>
+            <th>Status</th>
+            <th>Uploaded</th>
+            <th>Downloads</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in jobs %}
+            <tr>
+              <td><strong>{{ job.original_filename }}</strong></td>
+              <td>{{ job.page_count|default:"—" }}</td>
+              <td>{{ job.input_size_formatted }}</td>
+              <td>{{ job.output_size_formatted|default:"—" }}</td>
+              <td>
+                {% if job.status == 'COMPLETED' %}
+                  <span class="badge badge-completed">Completed</span>
+                {% elif job.status == 'PROCESSING' %}
+                  <span class="badge badge-processing">Processing...</span>
+                {% elif job.status == 'QUEUED' %}
+                  <span class="badge badge-queued">Queued</span>
+                {% elif job.status == 'FAILED' %}
+                  <span class="badge badge-failed">Failed</span>
+                {% else %}
+                  <span class="badge badge-expired">Expired</span>
+                {% endif %}
+              </td>
+              <td>{{ job.created_at|date:"Y-m-d H:i" }}</td>
+              <td>{{ job.download_count }}</td>
+              <td>
+                {% if job.is_downloadable %}
+                  <a href="{% url 'pdf_processor:download' job.id %}" class="btn btn-primary btn-sm">Download</a>
+                {% else %}
+                  <a href="{% url 'pdf_processor:job_detail' job.id %}" class="btn btn-secondary btn-sm">Inspect</a>
+                {% endif %}
+                <a href="{% url 'pdf_processor:delete' job.id %}" class="btn btn-secondary btn-sm" style="color: var(--color-danger); margin-left: 4px;" title="Delete document">Delete</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 40px 20px; color: var(--color-text-subtle);">
+      No processed documents yet.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

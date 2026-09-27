@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Humatron — High-Performance PDF Processing{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Convert PDF documents into image-based PDFs quickly and securely. Professional document processing service.{% endblock %}">
+  <link rel="canonical" href="https://{{ SITE_DOMAIN }}{{ request.path }}">
+  <link rel="stylesheet" href="{% static 'css/humatron.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <header class="site-header" role="banner">
+    <div class="header-container">
+      <a href="{% url 'home' %}" class="brand" aria-label="Humatron Home">
+        <span class="brand-name">HUMATRON</span>
+        <span class="brand-sub">Document Processing SaaS</span>
+      </a>
+
+      <nav class="main-nav" role="navigation" aria-label="Main Navigation">
+        {% if user.is_authenticated %}
+          <a href="{% url 'accounts:dashboard' %}" class="nav-link">Dashboard</a>
+          <a href="{% url 'pdf_processor:upload' %}" class="nav-link">Process PDF</a>
+          <a href="{% url 'usage:index' %}" class="nav-link">Usage</a>
+          <a href="{% url 'subscriptions:my_subscription' %}" class="nav-link">Subscription</a>
+          <a href="{% url 'payments:history' %}" class="nav-link">Payment History</a>
+          <div class="nav-divider" aria-hidden="true"></div>
+          <a href="{% url 'accounts:profile' %}" class="nav-link">{{ user.first_name|default:user.username }}</a>
+          <a href="{% url 'accounts:logout' %}" class="nav-link">Logout</a>
+        {% else %}
+          <a href="{% url 'home' %}" class="nav-link">Home</a>
+          <a href="{% url 'about' %}" class="nav-link">About</a>
+          <a href="{% url 'subscriptions:plans' %}" class="nav-link">Subscriptions</a>
+          <a href="{% url 'contact:index' %}" class="nav-link">Contact</a>
+          <div class="nav-divider" aria-hidden="true"></div>
+          <a href="{% url 'accounts:login' %}" class="nav-link">Login</a>
+          <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Register</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="site-main" role="main">
+    {% if messages %}
+      <div class="alerts-container" role="status" aria-live="polite">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-container">
+      <div>
+        <strong>Humatron</strong> — Formal, secure PDF image conversion service. Documents automatically removed in 7 days.
+      </div>
+      <div class="footer-links">
+        <a href="{% url 'about' %}">About</a>
+        <a href="{% url 'subscriptions:plans' %}">Subscriptions</a>
+        <a href="{% url 'contact:index' %}">Contact Support</a>
+        <a href="https://{{ SITE_DOMAIN }}">humatron.me</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/humatron.js' %}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

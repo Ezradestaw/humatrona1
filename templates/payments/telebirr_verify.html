@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Telebirr Payment — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 640px; margin: 0 auto;">
+  <div class="panel-header">
+    <h1>Verify Telebirr Payment</h1>
+    <a href="{% url 'payments:checkout' plan.code %}" class="btn btn-secondary btn-sm">Back to Checkout</a>
+  </div>
+
+  <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 16px; border-radius: 4px; margin-bottom: 20px;">
+    <strong>Plan:</strong> {{ plan.name }} &bull; <strong>Required Amount:</strong> {{ plan.price_etb|floatformat:2 }} ETB
+  </div>
+
+  <p>
+    After transferring {{ plan.price_etb|floatformat:2 }} ETB via Telebirr, paste the confirmation SMS message received from Telebirr into the field below:
+  </p>
+
+  <form method="post" action="{% url 'payments:verify_telebirr' plan.code %}" novalidate style="margin-top: 20px;">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label class="form-label" for="id_raw_message">Telebirr Confirmation SMS Text</label>
+      {{ form.raw_message }}
+      <div class="form-help">{{ form.raw_message.help_text }}</div>
+      {% if form.raw_message.errors %}<div class="form-error">{{ form.raw_message.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 4px; font-size: 13px; color: var(--color-warning); margin-bottom: 20px;">
+      <strong>Notice:</strong> The verification service parses the transaction reference number and verifies that the transferred amount strictly matches or exceeds {{ plan.price_etb|floatformat:2 }} ETB. Duplicate or previously used transaction references will be rejected.
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">
+      Verify Payment & Activate Subscription
+    </button>
+  </form>
+</div>
+{% endblock %}

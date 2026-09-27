@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Support — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 640px; margin: 0 auto;">
+  <h1>Contact Humatron Support</h1>
+  <p>For inquiries regarding document processing, subscriptions, or payment verification, submit your message below.</p>
+
+  <form method="post" action="{% url 'contact:index' %}" novalidate style="margin-top: 20px;">
+    {% csrf_token %}
+    
+    {# Honeypot spam field #}
+    {{ form.website }}
+
+    <div class="form-group">
+      <label class="form-label" for="id_name">Your Name</label>
+      {{ form.name }}
+      {% if form.name.errors %}<div class="form-error">{{ form.name.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="id_email">Email Address</label>
+      {{ form.email }}
+      {% if form.email.errors %}<div class="form-error">{{ form.email.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="id_subject">Subject</label>
+      {{ form.subject }}
+      {% if form.subject.errors %}<div class="form-error">{{ form.subject.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="id_message">Message</label>
+      {{ form.message }}
+      {% if form.message.errors %}<div class="form-error">{{ form.message.errors.0 }}</div>{% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+      Send Inquiry
+    </button>
+  </form>
+</div>
+{% endblock %}

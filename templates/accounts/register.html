@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Register Account — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 600px; margin: 0 auto;">
+  <h1>Create Your Account</h1>
+  <p>Register to receive one free PDF processing trial and access subscription plans.</p>
+
+  <form method="post" action="{% url 'accounts:register' %}" novalidate style="margin-top: 20px;">
+    {% csrf_token %}
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="id_first_name">First Name</label>
+        {{ form.first_name }}
+        {% if form.first_name.errors %}<div class="form-error">{{ form.first_name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="id_last_name">Last Name</label>
+        {{ form.last_name }}
+        {% if form.last_name.errors %}<div class="form-error">{{ form.last_name.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="id_email">Email Address (Used for Login & Verification)</label>
+      {{ form.email }}
+      {% if form.email.errors %}<div class="form-error">{{ form.email.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="id_phone_number">Phone Number</label>
+        {{ form.phone_number }}
+        {% if form.phone_number.errors %}<div class="form-error">{{ form.phone_number.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="id_country">Country</label>
+        {{ form.country }}
+        {% if form.country.errors %}<div class="form-error">{{ form.country.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="id_job_title">Job Title</label>
+        {{ form.job_title }}
+        {% if form.job_title.errors %}<div class="form-error">{{ form.job_title.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="id_sex">Sex</label>
+        {{ form.sex }}
+        {% if form.sex.errors %}<div class="form-error">{{ form.sex.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-group" style="display: none;">
+      <label class="form-label" for="id_job_title_other">Specify Job Title</label>
+      {{ form.job_title_other }}
+      {% if form.job_title_other.errors %}<div class="form-error">{{ form.job_title_other.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="id_password">Password</label>
+        {{ form.password }}
+        <div class="form-help">{{ form.password.help_text }}</div>
+        {% if form.password.errors %}<div class="form-error">{{ form.password.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="id_password_confirm">Confirm Password</label>
+        {{ form.password_confirm }}
+        {% if form.password_confirm.errors %}<div class="form-error">{{ form.password_confirm.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <p style="font-size: 12px; color: var(--color-text-subtle); margin-top: 12px;">
+      Privacy Notice: Profile information (country, role) is collected strictly to configure regional payment methods (e.g., Telebirr for Ethiopia) and optimize service provisioning. Your data is never sold or shared.
+    </p>
+
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+      Register Account
+    </button>
+  </form>
+
+  <div style="margin-top: 20px; text-align: center; font-size: 14px;">
+    Already have an account? <a href="{% url 'accounts:login' %}">Log in here</a>
+  </div>
+</div>
+{% endblock %}

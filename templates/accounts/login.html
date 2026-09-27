@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 460px; margin: 0 auto;">
+  <h1>Sign In to Humatron</h1>
+  <p>Access your dashboard, process PDF documents, and view subscriptions.</p>
+
+  <form method="post" action="{% url 'accounts:login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" novalidate style="margin-top: 20px;">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-error">
+        {{ form.non_field_errors.0 }}
+      </div>
+    {% endif %}
+
+    <div class="form-group">
+      <label class="form-label" for="id_email">Email Address</label>
+      {{ form.email }}
+      {% if form.email.errors %}<div class="form-error">{{ form.email.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <label class="form-label" for="id_password" style="margin-bottom: 0;">Password</label>
+        <a href="{% url 'accounts:password_reset' %}" style="font-size: 12px; color: var(--color-primary); text-decoration: none;">Forgot password?</a>
+      </div>
+      {{ form.password }}
+      {% if form.password.errors %}<div class="form-error">{{ form.password.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+      {{ form.remember_me }}
+      <label for="id_remember_me" style="font-size: 13px; color: var(--color-text-muted); cursor: pointer;">
+        Remember me on this browser
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">
+      Sign In
+    </button>
+  </form>
+
+  <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-border); font-size: 13px; display: flex; justify-content: space-between;">
+    <a href="{% url 'accounts:register' %}">Create an account</a>
+    <a href="{% url 'accounts:resend_verification' %}">Resend verification</a>
+  </div>
+</div>
+{% endblock %}

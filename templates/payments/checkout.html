@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout: {{ plan.name }} — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 760px; margin: 0 auto;">
+  <div class="panel-header">
+    <h1>Subscribe to {{ plan.name }}</h1>
+    <a href="{% url 'subscriptions:plans' %}" class="btn btn-secondary btn-sm">Change Plan</a>
+  </div>
+
+  <div class="grid-2" style="margin-bottom: 28px;">
+    <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 18px; border-radius: 4px;">
+      <h3 style="color: var(--color-primary); margin-bottom: 8px;">Order Summary</h3>
+      <p style="font-size: 14px; margin-bottom: 6px;"><strong>Plan:</strong> {{ plan.name }}</p>
+      <p style="font-size: 14px; margin-bottom: 6px;"><strong>Duration:</strong> {{ plan.duration_days }} days</p>
+      <p style="font-size: 14px; margin-bottom: 6px;"><strong>Document Limit:</strong> {{ plan.pdf_limit }} PDFs</p>
+      <p style="font-size: 14px; margin-bottom: 6px;"><strong>Maximum File Size:</strong> {{ plan.max_file_size_mb }} MB</p>
+      <p style="font-size: 14px; margin-bottom: 0;"><strong>Maximum Pages:</strong> {{ plan.max_pages_per_pdf }} pages</p>
+    </div>
+
+    <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 18px; border-radius: 4px; display: flex; flex-direction: column; justify-content: center;">
+      <span style="font-size: 12px; color: var(--color-text-subtle); text-transform: uppercase; font-weight: 600;">Total Payable</span>
+      <div style="font-size: 32px; font-weight: 700; color: var(--color-primary); margin: 6px 0;">
+        ${{ plan.price|floatformat:2 }} <span style="font-size: 16px; font-weight: 400; color: var(--color-text-subtle);">USD</span>
+      </div>
+      <div style="font-size: 15px; font-weight: 600; color: var(--color-primary-hover);">
+        or {{ plan.price_etb|floatformat:2 }} ETB (Telebirr)
+      </div>
+    </div>
+  </div>
+
+  <h2>Select Payment Method</h2>
+  <p style="font-size: 14px;">Your registered country is <strong>{{ user.country }}</strong>.</p>
+
+  {% if is_ethiopia %}
+    {# Ethiopia: Telebirr is Primary #}
+    <div style="border: 2px solid var(--color-primary); border-radius: 4px; padding: 20px; margin-bottom: 24px; background: white;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="color: var(--color-primary); margin-bottom: 0;">Telebirr (Primary Payment Method for Ethiopia)</h3>
+        <span class="badge badge-active">Recommended</span>
+      </div>
+      <p style="font-size: 14px;">
+        Transfer exactly <strong>{{ plan.price_etb|floatformat:2 }} ETB</strong> using Telebirr to our merchant account:
+      </p>
+      <div style="background: #f1f5f9; padding: 12px; border-radius: 4px; margin: 12px 0; font-family: var(--font-mono); font-size: 14px;">
+        Merchant Name: <strong>{{ telebirr_merchant }}</strong><br>
+        Telebirr Phone Number: <strong>{{ telebirr_phone }}</strong><br>
+        Payable Amount: <strong>{{ plan.price_etb|floatformat:2 }} ETB</strong>
+      </div>
+      <p style="font-size: 13px; color: var(--color-text-subtle);">
+        Once transferred, you will receive an SMS from Telebirr containing a transaction confirmation number. Paste that message to verify and instantly activate your subscription.
+      </p>
+      <div style="margin-top: 16px;">
+        <a href="{% url 'payments:verify_telebirr' plan.code %}" class="btn btn-primary">
+          Proceed to Telebirr Message Verification &rarr;
+        </a>
+      </div>
+    </div>
+
+    <div style="border: 1px solid var(--color-border); border-radius: 4px; padding: 20px; background: #fafafa;">
+      <h3 style="color: var(--color-text-muted); margin-bottom: 8px;">Alternative: PayPal (USD {{ plan.price|floatformat:2 }})</h3>
+      <p style="font-size: 13px;">International payment using PayPal account or credit card in USD.</p>
+      <div style="margin-top: 12px;" id="paypal-button-container">
+        <form method="post" action="{% url 'payments:capture_paypal' plan.code %}">
+          {% csrf_token %}
+          <div class="form-group" style="max-width: 320px;">
+            <label class="form-label" for="paypal_order_id">PayPal Order ID (Sandbox/Direct)</label>
+            <input type="text" name="order_id" id="paypal_order_id" class="form-input" placeholder="e.g. 5O190127TN364715T" required>
+          </div>
+          <button type="submit" class="btn btn-secondary">Verify & Activate via PayPal</button>
+        </form>
+      </div>
+    </div>
+
+  {% else %}
+    {# International: PayPal is Primary #}
+    <div style="border: 2px solid var(--color-primary); border-radius: 4px; padding: 20px; margin-bottom: 24px; background: white;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="color: var(--color-primary); margin-bottom: 0;">PayPal (USD ${{ plan.price|floatformat:2 }})</h3>
+        <span class="badge badge-active">Recommended</span>
+      </div>
+      <p style="font-size: 14px;">
+        Pay securely with your PayPal balance, debit card, or credit card.
+      </p>
+      <div style="margin-top: 16px;">
+        <form method="post" action="{% url 'payments:capture_paypal' plan.code %}">
+          {% csrf_token %}
+          <div class="form-group" style="max-width: 360px;">
+            <label class="form-label" for="paypal_order_id_intl">PayPal Order / Transaction ID</label>
+            <input type="text" name="order_id" id="paypal_order_id_intl" class="form-input" placeholder="e.g. 8MC91238472910" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Verify & Activate Subscription</button>
+        </form>
+      </div>
+    </div>
+
+    <div style="border: 1px solid var(--color-border); border-radius: 4px; padding: 20px; background: #fafafa;">
+      <h3 style="color: var(--color-text-muted); margin-bottom: 8px;">Telebirr (Ethiopian Birr: {{ plan.price_etb|floatformat:2 }} ETB)</h3>
+      <p style="font-size: 13px;">If you have access to Telebirr, you can pay in ETB and verify via payment message.</p>
+      <div style="margin-top: 12px;">
+        <a href="{% url 'payments:verify_telebirr' plan.code %}" class="btn btn-secondary btn-sm">Pay with Telebirr</a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
