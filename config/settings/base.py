@@ -205,6 +205,23 @@ PDF_METADATA_PRODUCER = env.str('PDF_METADATA_PRODUCER', default='Humatron PDF P
 PDF_METADATA_TITLE = env.str('PDF_METADATA_TITLE', default='')
 PDF_METADATA_CREATOR = env.str('PDF_METADATA_CREATOR', default='')
 
+# OCR Stealth PDF Degradation Settings
+PDF_STEALTH_ENABLED = env.bool('PDF_STEALTH_ENABLED', default=True)
+PDF_STEALTH_SSIM = env.float('PDF_STEALTH_SSIM', default=0.985)
+PDF_STEALTH_STRENGTH = env('PDF_STEALTH_STRENGTH', default=None)
+if PDF_STEALTH_STRENGTH is not None and str(PDF_STEALTH_STRENGTH).strip():
+    try:
+        PDF_STEALTH_STRENGTH = float(PDF_STEALTH_STRENGTH)
+    except ValueError:
+        PDF_STEALTH_STRENGTH = None
+else:
+    PDF_STEALTH_STRENGTH = None
+PDF_STEALTH_GEO = env.float('PDF_STEALTH_GEO', default=1.0)
+PDF_STEALTH_TILE = env.int('PDF_STEALTH_TILE', default=768)
+PDF_STEALTH_SKIP = env.str('PDF_STEALTH_SKIP', default='')
+PDF_STEALTH_ONLY = env.str('PDF_STEALTH_ONLY', default='')
+PDF_STEALTH_SEED = env.int('PDF_STEALTH_SEED', default=0)
+
 
 
 # Payments Configuration

@@ -3,9 +3,11 @@ import os
 import shutil
 import tempfile
 import logging
+import numpy as np
 from PIL import Image
 import pymupdf
 from django.conf import settings
+from pdf_processor.stealth import apply_stealth_degradation
 
 logger = logging.getLogger('humatron')
 
@@ -105,12 +107,13 @@ class PDFToImagePDFConverter:
             pass
 
     @classmethod
-    def convert(cls, input_file_path, output_file_path, dpi=None, metadata=None):
+    def convert(cls, input_file_path, output_file_path, dpi=None, metadata=None, stealth_config=None):
         """
         Executes conversion inside an isolated temporary directory.
-        Returns dictionary with {page_count, output_size_bytes}.
+        Returns dictionary with {page_count, output_size_bytes, stealth_reports}.
         Pipeline:
         Original PDF -> Read PDF -> Render pages to images -> Process images / transparent layer
+        -> Apply OCR Stealth Degradation (SSIM budget calibrated)
         -> Generate completely new PDF -> Apply minimal controlled metadata -> Store final PDF
         """
         configured_dpi = getattr(settings, 'PDF_RENDER_DPI', cls.DEFAULT_DPI)
@@ -119,6 +122,7 @@ class PDFToImagePDFConverter:
 
         in_doc = None
         out_doc = None
+        stealth_reports = []
 
         try:
             if not os.path.exists(input_file_path):
@@ -157,18 +161,43 @@ class PDFToImagePDFConverter:
                 # 4. Alpha composite operation combining image and transparent layer (Section 21)
                 composited_image = Image.alpha_composite(base_image, transparent_layer)
 
-                # 5. Convert composited image into final page raster image bytes
-                final_rgb = composited_image.convert("RGB")
-                img_buffer = io.BytesIO()
-                final_rgb.save(img_buffer, format="JPEG", quality=92, optimize=True)
-                img_bytes = img_buffer.getvalue()
+                # 5. Apply OCR Stealth Degradation after transparent layer
+                stealth_enabled = getattr(settings, 'PDF_STEALTH_ENABLED', True) if stealth_config is None or 'enabled' not in stealth_config else stealth_config['enabled']
+                if stealth_enabled:
+                    # Optional back page for realistic bleed-through on multi-page docs
+                    back_bgr = None
+                    if page_count > 1:
+                        back_page = in_doc[(page_idx + 1) % page_count]
+                        back_pix = back_page.get_pixmap(dpi=render_dpi)
+                        back_bgr = np.frombuffer(back_pix.samples, np.uint8).reshape(back_pix.h, back_pix.w, 3)[:, :, ::-1]
+                        back_pix = None
 
-                # Clean up intermediate PIL images and buffer immediately
+                    rgb_array = np.array(composited_image.convert("RGB"))
+                    bgr_array = rgb_array[:, :, ::-1]
+                    img_bytes, s_report = apply_stealth_degradation(
+                        bgr_array,
+                        back_bgr=back_bgr,
+                        dpi=render_dpi,
+                        page_idx=page_idx,
+                        config=stealth_config,
+                    )
+                    stealth_reports.append(s_report)
+                    rgb_array = None
+                    bgr_array = None
+                    back_bgr = None
+                else:
+                    final_rgb = composited_image.convert("RGB")
+                    img_buffer = io.BytesIO()
+                    final_rgb.save(img_buffer, format="JPEG", quality=92, optimize=True)
+                    img_bytes = img_buffer.getvalue()
+                    final_rgb.close()
+                    img_buffer.close()
+                    stealth_reports.append({'enabled': False, 'page': page_idx + 1})
+
+                # Clean up intermediate PIL images immediately
                 base_image.close()
                 transparent_layer.close()
                 composited_image.close()
-                final_rgb.close()
-                img_buffer.close()
 
                 # 6. Create page matching original dimensions (in points)
                 new_page = out_doc.new_page(width=rect.width, height=rect.height)
@@ -191,14 +220,14 @@ class PDFToImagePDFConverter:
             # Move verified output to destination path
             shutil.move(temp_output, output_file_path)
 
-
             output_size = os.path.getsize(output_file_path)
-            logger.info("Successfully converted %d pages to image-based PDF: %s (%d bytes)",
+            logger.info("Successfully converted %d pages to stealth image-based PDF: %s (%d bytes)",
                         page_count, output_file_path, output_size)
 
             return {
                 'page_count': page_count,
                 'output_size_bytes': output_size,
+                'stealth_reports': stealth_reports,
             }
 
         except Exception as exc:
