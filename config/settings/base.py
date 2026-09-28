@@ -217,7 +217,7 @@ if PDF_STEALTH_STRENGTH is not None and str(PDF_STEALTH_STRENGTH).strip():
 else:
     PDF_STEALTH_STRENGTH = None
 PDF_STEALTH_GEO = env.float('PDF_STEALTH_GEO', default=1.0)
-PDF_STEALTH_TILE = env.int('PDF_STEALTH_TILE', default=768)
+PDF_STEALTH_TILE = env.int('PDF_STEALTH_TILE', default=256)
 PDF_STEALTH_SKIP = env.str('PDF_STEALTH_SKIP', default='')
 PDF_STEALTH_ONLY = env.str('PDF_STEALTH_ONLY', default='')
 PDF_STEALTH_SEED = env.int('PDF_STEALTH_SEED', default=0)

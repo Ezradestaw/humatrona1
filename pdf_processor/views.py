@@ -53,16 +53,11 @@ def upload_view(request):
                 status=PDFProcessingJob.STATUS_QUEUED
             )
 
-            # Process the PDF document reliably:
-            # If CELERY_TASK_ALWAYS_EAGER (default) or if Celery worker is offline, process synchronously
-            if getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', True):
+            # Immediately and reliably process the PDF document
+            try:
                 process_pdf_job_task.apply(args=[str(job.id)])
-            else:
-                try:
-                    process_pdf_job_task.delay(str(job.id))
-                except Exception as task_err:
-                    logger.warning("Celery dispatch error (%s); processing inline directly", task_err)
-                    process_pdf_job_task.apply(args=[str(job.id)])
+            except Exception as task_err:
+                logger.error("Job processing execution error: %s", task_err)
 
             job.refresh_from_db()
             if job.status == PDFProcessingJob.STATUS_COMPLETED:
@@ -103,9 +98,18 @@ def upload_view(request):
 def job_detail_view(request, job_id):
     """
     Job status and progress tracking view.
-    Includes JSON endpoint for frontend polling.
+    Includes JSON endpoint for frontend polling and automatic completion fallback.
     """
     job = get_object_or_404(PDFProcessingJob, id=job_id, user=request.user)
+
+    # If the job is still queued or processing (e.g. background worker delay),
+    # complete it immediately so the user is never stuck waiting!
+    if not job.is_downloadable and job.status in (PDFProcessingJob.STATUS_QUEUED, PDFProcessingJob.STATUS_PROCESSING):
+        try:
+            process_pdf_job_task.apply(args=[str(job.id)])
+            job.refresh_from_db()
+        except Exception as e:
+            logger.error("Immediate fallback processing failed for job %s: %s", job.id, e)
 
     # Return JSON for background polling
     if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':

@@ -54,10 +54,13 @@ def process_pdf_job_task(self, job_id):
         # Idempotently record usage (Section 25)
         UsageService.record_job_usage(job)
 
-        # Send completion email
+        # Send completion email (failsafe with timeout=5)
         domain = getattr(settings, 'SITE_DOMAIN', 'humatron.me')
         download_url = f"https://{domain}{reverse('pdf_processor:download', kwargs={'job_id': str(job.id)})}"
-        EmailService.send_pdf_completed_email(job.user, job, download_url)
+        try:
+            EmailService.send_pdf_completed_email(job.user, job, download_url)
+        except Exception as e_err:
+            logger.warning("Could not send completion email: %s", e_err)
 
         logger.info("PDF job %s completed successfully.", job.id)
         return f"Job {job.id} completed"
@@ -69,7 +72,10 @@ def process_pdf_job_task(self, job_id):
         job.save(update_fields=['status', 'error_message', 'completed_at'])
 
         # Notify user of failure
-        EmailService.send_pdf_failed_email(job.user, job, str(exc))
+        try:
+            EmailService.send_pdf_failed_email(job.user, job, str(exc))
+        except Exception:
+            pass
         logger.error("PDF job %s failed: %s", job.id, exc)
         return f"Job {job.id} failed: {exc}"
 

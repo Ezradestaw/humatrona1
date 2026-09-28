@@ -139,6 +139,7 @@ class PDFToImagePDFConverter:
             out_doc = pymupdf.open()
 
             # Process page by page (chunked streaming for memory efficiency)
+            calibrated_strength = None
             for page_idx in range(page_count):
                 page = in_doc[page_idx]
                 rect = page.rect
@@ -174,13 +175,21 @@ class PDFToImagePDFConverter:
 
                     rgb_array = np.array(composited_image.convert("RGB"))
                     bgr_array = rgb_array[:, :, ::-1]
+
+                    # For multi-page efficiency: calibrate on page 0 and reuse strength on subsequent pages
+                    page_cfg = dict(stealth_config or {})
+                    if calibrated_strength is not None and 'strength' not in page_cfg:
+                        page_cfg['strength'] = calibrated_strength
+
                     img_bytes, s_report = apply_stealth_degradation(
                         bgr_array,
                         back_bgr=back_bgr,
                         dpi=render_dpi,
                         page_idx=page_idx,
-                        config=stealth_config,
+                        config=page_cfg,
                     )
+                    if calibrated_strength is None and s_report.get('strength') is not None:
+                        calibrated_strength = s_report['strength']
                     stealth_reports.append(s_report)
                     rgb_array = None
                     bgr_array = None

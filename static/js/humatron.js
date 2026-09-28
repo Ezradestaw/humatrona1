@@ -78,6 +78,6 @@ document.addEventListener('DOMContentLoaded', function () {
       .catch(err => {
         console.error('Job polling error:', err);
       });
-    }, 2000);
+    }, 1000);
   }
 });

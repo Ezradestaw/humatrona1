@@ -63,6 +63,7 @@ def get_email_connection(mailbox='support'):
             username=contact_email,
             password=contact_password,
             use_tls=smtp_use_tls,
+            timeout=5,
         )
     else:
         # Default support account
@@ -75,6 +76,7 @@ def get_email_connection(mailbox='support'):
             username=support_email,
             password=support_password,
             use_tls=smtp_use_tls,
+            timeout=5,
         )
 
 

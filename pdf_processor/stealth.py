@@ -236,7 +236,7 @@ def calibrate(tile, back, seed, k, active, target):
     if top >= target:
         return 1.0, top
     lo, hi, best = 0.0, 1.0, 1.0
-    for _ in range(6):
+    for _ in range(4):
         mid = (lo + hi) / 2
         sc = score(mid)
         if sc >= target:
@@ -264,7 +264,7 @@ def apply_stealth_degradation(img_bgr, back_bgr=None, dpi=150, page_idx=0, confi
     target_ssim = cfg.get('ssim', getattr(settings, 'PDF_STEALTH_SSIM', 0.985))
     fixed_strength = cfg.get('strength', getattr(settings, 'PDF_STEALTH_STRENGTH', None))
     geo_mult = cfg.get('geo', getattr(settings, 'PDF_STEALTH_GEO', 1.0))
-    tile_size = cfg.get('tile', getattr(settings, 'PDF_STEALTH_TILE', 768))
+    tile_size = cfg.get('tile', getattr(settings, 'PDF_STEALTH_TILE', 256))
     seed = cfg.get('seed', getattr(settings, 'PDF_STEALTH_SEED', 0)) + page_idx
     skip = cfg.get('skip', getattr(settings, 'PDF_STEALTH_SKIP', ''))
     only = cfg.get('only', getattr(settings, 'PDF_STEALTH_ONLY', ''))

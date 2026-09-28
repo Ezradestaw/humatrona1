@@ -56,10 +56,29 @@
         Security Notice: Files are processed in an isolated environment. Text, vector layers, and metadata are flattened into images. Files are automatically removed after 7 days.
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block btn-lg" style="padding: 14px; font-size: 16px; font-weight: 600; cursor: pointer;">
+      <button type="submit" id="upload-submit-btn" class="btn btn-primary btn-block btn-lg" style="padding: 14px; font-size: 16px; font-weight: 600; cursor: pointer;">
         Upload and Process PDF
       </button>
     </form>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.querySelector('form');
+  const btn = document.getElementById('upload-submit-btn');
+  if (form && btn) {
+    form.addEventListener('submit', function () {
+      setTimeout(function () {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Processing PDF... Please wait';
+        btn.style.opacity = '0.85';
+        btn.style.cursor = 'wait';
+      }, 50);
+    });
+  }
+});
+</script>
 {% endblock %}

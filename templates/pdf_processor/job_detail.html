@@ -2,6 +2,12 @@
 
 {% block title %}Processed PDF: {{ job.original_filename }} — Humatron{% endblock %}
 
+{% block extra_head %}
+{% if not job.is_downloadable and job.status != 'FAILED' and job.status != 'EXPIRED' %}
+<meta http-equiv="refresh" content="2">
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="panel" style="max-width: 600px; margin: 30px auto;" id="job-status-tracker" data-job-id="{{ job.id }}">
   <div class="panel-header">
