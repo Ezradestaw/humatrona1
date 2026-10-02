@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Humatron — Convert PDF Documents to Image-Based PDFs{% endblock %}
+{% block title %}Humatron — PDF Stealth: Privacy-Focused PDF Processing{% endblock %}
 
 {% block content %}
 <div class="panel" style="text-align: center; padding: 48px 24px;">
-  <h1 style="font-size: 32px; margin-bottom: 12px; color: var(--color-primary);">Convert PDF documents into image-based PDFs quickly and securely.</h1>
-  <p class="lead" style="max-width: 680px; margin: 0 auto 24px auto;">
-    Humatron flattens fonts, text, and vector layers into raster page images and rebuilds a pristine PDF, ensuring non-selectable, tamper-resistant document distribution.
+  <h1 style="font-size: 32px; margin-bottom: 12px; color: var(--color-primary);">PDF Stealth: Sanitize and optimize PDF documents quickly and securely.</h1>
+  <p class="lead" style="max-width: 720px; margin: 0 auto 24px auto;">
+    Humatron provides PDF Stealth — a privacy-focused PDF processing service that sanitizes and optimizes PDF files while preserving their visible content. Engineered to bypass AI detectors, plagiarism checking systems, and automated document detection mechanisms.
   </p>
   <div style="display: flex; justify-content: center; gap: 16px;">
     {% if user.is_authenticated %}
-      <a href="{% url 'pdf_processor:upload' %}" class="btn btn-primary" style="padding: 10px 24px; font-size: 15px;">Process a PDF</a>
+      <a href="{% url 'pdf_processor:upload' %}" class="btn btn-primary" style="padding: 10px 24px; font-size: 15px;">PDF Stealth (Process PDF)</a>
       <a href="{% url 'subscriptions:plans' %}" class="btn btn-secondary" style="padding: 10px 24px; font-size: 15px;">View Subscriptions</a>
     {% else %}
-      <a href="{% url 'accounts:register' %}" class="btn btn-primary" style="padding: 10px 24px; font-size: 15px;">Process a PDF (Free Trial)</a>
+      <a href="{% url 'accounts:register' %}" class="btn btn-primary" style="padding: 10px 24px; font-size: 15px;">Try PDF Stealth (Free Trial)</a>
       <a href="{% url 'subscriptions:plans' %}" class="btn btn-secondary" style="padding: 10px 24px; font-size: 15px;">View Subscriptions</a>
     {% endif %}
   </div>
@@ -21,20 +21,20 @@
 
 <div class="panel">
   <div class="panel-header">
-    <h2>How Humatron Works</h2>
+    <h2>How Humatron PDF Stealth Works</h2>
   </div>
   <div class="grid-3">
     <div>
       <h3 style="color: var(--color-primary);">1. Upload Document</h3>
-      <p>Submit your standard PDF file. The system validates file integrity, dimensions, and pages securely.</p>
+      <p>Submit your standard PDF file. The system validates file integrity, page counts, and dimensions securely.</p>
     </div>
     <div>
-      <h3 style="color: var(--color-primary);">2. Background Conversion</h3>
-      <p>Each page is rendered into an image at 150 DPI and recombined into a new rasterized PDF preserving original dimensions.</p>
+      <h3 style="color: var(--color-primary);">2. Stealth Sanitization & Bypass</h3>
+      <p>Each page is sanitized and optimized with invisible character dispersion and subtle noise to bypass AI detectors, plagiarism crawlers, and automated detection mechanisms while maintaining flawless visible fidelity.</p>
     </div>
     <div>
-      <h3 style="color: var(--color-primary);">3. Download Result</h3>
-      <p>Retrieve your processed PDF immediately. Files are retained securely for 7 days before automated cleanup.</p>
+      <h3 style="color: var(--color-primary);">3. Download Undetectable PDF</h3>
+      <p>Retrieve your stealth-optimized PDF immediately. Completely natural and visible for human readers, while neutralizing automated detection systems.</p>
     </div>
   </div>
 </div>

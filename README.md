@@ -230,7 +230,7 @@ Gunicorn / Uvicorn ASGI Application (127.0.0.1:8000)
    ↓
 PostgreSQL 16+ & Redis 7+
 
-Celery Worker (PDF Conversion) + Celery Beat (Daily File Cleanup)
+Celery Worker (PDF Stealth) + Celery Beat (Daily File Cleanup)
 ```
 
 ### Deployment Steps on Ubuntu / Debian Linux

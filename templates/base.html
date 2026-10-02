@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Humatron — High-Performance PDF Processing{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}Convert PDF documents into image-based PDFs quickly and securely. Professional document processing service.{% endblock %}">
+  <title>{% block title %}Humatron — PDF Stealth Processing{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}PDF Stealth — Privacy-focused PDF processing service that sanitizes and optimizes PDF files while preserving their visible content.{% endblock %}">
   <link rel="canonical" href="https://{{ SITE_DOMAIN }}{{ request.path }}">
   <link rel="stylesheet" href="{% static 'css/humatron.css' %}">
   {% block extra_head %}{% endblock %}
@@ -17,13 +17,13 @@
     <div class="header-container">
       <a href="{% url 'home' %}" class="brand" aria-label="Humatron Home">
         <span class="brand-name">HUMATRON</span>
-        <span class="brand-sub">Document Processing SaaS</span>
+        <span class="brand-sub">PDF Stealth SaaS</span>
       </a>
 
       <nav class="main-nav" role="navigation" aria-label="Main Navigation">
         {% if user.is_authenticated %}
           <a href="{% url 'accounts:dashboard' %}" class="nav-link">Dashboard</a>
-          <a href="{% url 'pdf_processor:upload' %}" class="nav-link">Process PDF</a>
+          <a href="{% url 'pdf_processor:upload' %}" class="nav-link">PDF Stealth</a>
           <a href="{% url 'usage:index' %}" class="nav-link">Usage</a>
           <a href="{% url 'subscriptions:my_subscription' %}" class="nav-link">Subscription</a>
           <a href="{% url 'payments:history' %}" class="nav-link">Payment History</a>
@@ -60,7 +60,7 @@
   <footer class="site-footer" role="contentinfo">
     <div class="footer-container">
       <div>
-        <strong>Humatron</strong> — Formal, secure PDF image conversion service. Documents automatically removed in 7 days.
+        <strong>Humatron</strong> — Privacy-focused PDF Stealth service. Documents automatically removed in 7 days.
       </div>
       <div class="footer-links">
         <a href="{% url 'about' %}">About</a>

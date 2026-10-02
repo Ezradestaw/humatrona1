@@ -1,33 +1,44 @@
 {% extends "base.html" %}
 
-{% block title %}About Humatron — Document Processing Service{% endblock %}
+{% block title %}About Humatron — PDF Stealth Service{% endblock %}
 
 {% block content %}
 <div class="panel">
   <h1>About Humatron</h1>
   <p class="lead">
-    Humatron is a dedicated document processing utility designed to convert PDF documents into image-based PDFs reliably and securely.
+    Humatron is a privacy-focused PDF processing service that provides PDF Stealth to sanitize and optimize PDF files while preserving their visible content.
   </p>
 
   <h2 style="margin-top: 24px;">Core Purpose & Technology</h2>
   <p>
-    When standard PDF documents are shared, they typically contain selectable text layers, embedded fonts, and vector elements.
-    Humatron converts each page into an exact raster image and reconstructs a new PDF structure. This eliminates hidden layers,
-    flattens text into visual pixels, and prevents copying or scraping of textual content while preserving visual layout.
+    When standard PDF documents are shared, they frequently carry hidden layers, embedded fonts, tracking metadata, and object trees.
+    Through PDF Stealth, Humatron sanitizes and optimizes each page into pristine rasterized page structures. This deep-cleans hidden data,
+    flattens text layers, and optimizes the document while completely preserving visible content and layout.
   </p>
+
+  <h2 style="margin-top: 24px;">AI Detector & Plagiarism System Bypass</h2>
+  <p>
+    Automated scanners, AI detectors, and plagiarism detection systems inspect raw PDF token streams, font encoding tables, and semantic signatures.
+    PDF Stealth defeats these detection mechanisms through:
+  </p>
+  <ul style="margin-left: 20px; color: var(--color-text-muted); line-height: 1.8;">
+    <li><strong>Neutralizing AI Content Detectors:</strong> Applies subtle pixel-level Gaussian noise modulation and zero-width Unicode dispersion to break automated AI detection patterns while preserving crisp visual readability for humans.</li>
+    <li><strong>Bypassing Plagiarism Systems:</strong> Eliminates direct scraper text extraction by flattening layers into tamper-resistant high-resolution raster images, defeating automated similarity engines.</li>
+    <li><strong>Defeating Forensic & Security Controls:</strong> Strips hidden metadata, producer tags, timestamps, and embedded inspection artifacts that automated security systems monitor.</li>
+  </ul>
 
   <h2 style="margin-top: 24px;">Security & Privacy Principles</h2>
   <ul style="margin-left: 20px; color: var(--color-text-muted); line-height: 1.8;">
     <li><strong>Untrusted Input Handling:</strong> Every uploaded document is validated for MIME type, header magic bytes, and corrupted objects.</li>
     <li><strong>Isolated Processing:</strong> Document rendering occurs in isolated temporary directories with strict resource and timeout limits.</li>
     <li><strong>Strict Retention Policy:</strong> Processed files are retained for exactly 7 days, after which they are permanently deleted by automated cleanup routines.</li>
-    <li><strong>No Data Exploitation:</strong> Documents are processed exclusively for file conversion and are never retained for machine learning or third-party sharing.</li>
+    <li><strong>No Data Exploitation:</strong> Documents are processed exclusively for PDF Stealth optimization and are never retained for machine learning or third-party sharing.</li>
     <li><strong>Authenticated File Retrieval:</strong> Downloads require user authentication and ownership authorization. No public predictable URLs are exposed.</li>
   </ul>
 
   <h2 style="margin-top: 24px;">Supported Workflow</h2>
   <p>
-    Users register an account, verify their email address, and receive one free trial conversion. Further document processing is supported through flexible monthly subscriptions payable via Telebirr or Binance Pay.
+    Users register an account, verify their email address, and receive one free trial PDF Stealth processing. Further document processing is supported through flexible monthly subscriptions payable via Telebirr or Binance Pay.
   </p>
 </div>
 {% endblock %}

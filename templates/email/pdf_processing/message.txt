@@ -1,6 +1,6 @@
 Dear {{ user.first_name|default:user.username }},
 
-Your document '{{ job.original_filename }}' has been converted into an image-based PDF successfully.
+Your document '{{ job.original_filename }}' has been processed with PDF Stealth successfully.
 
 Job Details:
 - Original Filename: {{ job.original_filename }}
@@ -13,6 +13,6 @@ Download your document here (requires login):
 Note: Processed files are securely retained for 7 days before permanent removal.
 
 Regards,
-Humatron PDF Service
+Humatron PDF Stealth Service
 support@humatron.me
 https://humatron.me

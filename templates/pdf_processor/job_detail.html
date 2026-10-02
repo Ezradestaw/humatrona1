@@ -35,7 +35,7 @@
     <div style="font-size: 36px; margin-bottom: 8px;">✅</div>
     <h2 style="color: var(--color-success); font-size: 20px; margin-bottom: 6px;">Your PDF is Ready!</h2>
     <p style="font-size: 14px; color: var(--color-text-muted); margin-bottom: 20px;">
-      All pages have been flattened into raster images and reconstructed into your new PDF document.
+      All pages have been sanitized and optimized with PDF Stealth while preserving visible content.
     </p>
 
     <!-- Clear, Highly Visible Download Button -->
@@ -44,7 +44,7 @@
          href="{% if job.is_downloadable %}{% url 'pdf_processor:download' job.id %}{% else %}#{% endif %}"
          class="btn btn-success btn-lg"
          style="display: inline-block; padding: 14px 36px; font-size: 17px; font-weight: 700; text-decoration: none; border-radius: 4px;">
-        ⬇ Download Processed PDF
+        ⬇ Download PDF Stealth Document
       </a>
     </div>
 
@@ -61,7 +61,7 @@
 
   {# Error Box #}
   <div id="job-error-container" style="{% if job.status != 'FAILED' %}display: none;{% endif %} padding: 20px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; margin: 20px 0;">
-    <h3 style="color: var(--color-danger); margin-bottom: 6px;">Conversion Failed</h3>
+    <h3 style="color: var(--color-danger); margin-bottom: 6px;">PDF Stealth Processing Failed</h3>
     <p id="job-error-text" style="font-size: 14px; color: var(--color-danger); margin-bottom: 12px;">
       {{ job.error_message|default:"An unexpected error occurred while processing the document." }}
     </p>

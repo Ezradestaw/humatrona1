@@ -7,9 +7,9 @@
   <div class="panel-header">
     <div>
       <h1>Welcome, {{ user.first_name|default:user.username }}</h1>
-      <p style="margin-bottom: 0;">Account Dashboard & Processing Status</p>
+      <p style="margin-bottom: 0;">Account Dashboard & PDF Stealth Processing Status</p>
     </div>
-    <a href="{% url 'pdf_processor:upload' %}" class="btn btn-primary">Process PDF</a>
+    <a href="{% url 'pdf_processor:upload' %}" class="btn btn-primary">PDF Stealth</a>
   </div>
 
   <div class="grid-3" style="margin-bottom: 24px;">
@@ -26,7 +26,7 @@
     </div>
 
     <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 18px; border-radius: 6px;">
-      <div style="font-size: 12px; color: var(--color-text-subtle); text-transform: uppercase; font-weight: 600;">PDF Usage</div>
+      <div style="font-size: 12px; color: var(--color-text-subtle); text-transform: uppercase; font-weight: 600;">PDF Usage (PDF Stealth)</div>
       <div style="font-size: 22px; font-weight: 700; color: var(--color-primary); margin-top: 4px;">
         {% if is_unlimited %}
           {{ used_count }} PDFs
@@ -68,7 +68,7 @@
 
 <div class="panel">
   <div class="panel-header">
-    <h2>Recent Processing History</h2>
+    <h2>Recent PDF Stealth History</h2>
     <a href="{% url 'pdf_processor:history' %}" class="btn btn-secondary btn-sm">View All History</a>
   </div>
 

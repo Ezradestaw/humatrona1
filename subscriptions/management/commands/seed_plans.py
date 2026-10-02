@@ -10,7 +10,7 @@ class Command(BaseCommand):
             {
                 'name': 'Starter',
                 'code': 'starter',
-                'description': 'Ideal for individual professionals with occasional PDF conversion requirements.',
+                'description': 'Ideal for individual professionals with occasional PDF Stealth requirements.',
                 'price': 20.00,
                 'currency': 'USD',
                 'price_etb': 2700.00,

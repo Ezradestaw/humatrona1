@@ -61,16 +61,16 @@
   {% elif trial_available %}
     <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 24px; border-radius: 4px; margin-bottom: 24px;">
       <span class="badge badge-active">Active Free Trial</span>
-      <h2 style="font-size: 24px; color: var(--color-primary); margin-top: 8px;">1 Free PDF Conversion Available</h2>
-      <p style="margin-top: 8px;">You can upload and convert one PDF document for free. After your trial document is processed, choose a subscription to continue.</p>
+      <h2 style="font-size: 24px; color: var(--color-primary); margin-top: 8px;">1 Free PDF Stealth Available</h2>
+      <p style="margin-top: 8px;">You can upload and process one PDF document with PDF Stealth for free. After your trial document is processed, choose a subscription to continue.</p>
       <div style="margin-top: 16px;">
-        <a href="{% url 'pdf_processor:upload' %}" class="btn btn-primary">Process Your Free Trial PDF</a>
+        <a href="{% url 'pdf_processor:upload' %}" class="btn btn-primary">Process Your Free Trial with PDF Stealth</a>
       </div>
     </div>
   {% else %}
     <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 24px; border-radius: 4px; margin-bottom: 24px;">
       <h2 style="color: var(--color-danger);">No Active Subscription</h2>
-      <p style="margin-top: 8px;">Your free trial or previous subscription has ended. Select a plan to resume document conversion.</p>
+      <p style="margin-top: 8px;">Your free trial or previous subscription has ended. Select a plan to resume PDF Stealth processing.</p>
       <div style="margin-top: 16px;">
         <a href="{% url 'subscriptions:plans' %}" class="btn btn-primary">Browse Subscription Plans</a>
       </div>

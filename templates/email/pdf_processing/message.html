@@ -5,7 +5,7 @@
 {% block content %}
 <h2>Your PDF is ready</h2>
 <p>Dear {{ user.first_name|default:user.username }},</p>
-<p>Your document <strong>{{ job.original_filename }}</strong> has been converted into an image-based PDF successfully.</p>
+<p>Your document <strong>{{ job.original_filename }}</strong> has been processed with PDF Stealth successfully.</p>
 
 <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
   <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -13,7 +13,7 @@
     <td style="padding: 8px 0; text-align: right; font-weight: 600;">{{ job.original_filename }}</td>
   </tr>
   <tr style="border-bottom: 1px solid #e2e8f0;">
-    <td style="padding: 8px 0; color: #64748b;">Pages Converted</td>
+    <td style="padding: 8px 0; color: #64748b;">Pages Processed (PDF Stealth)</td>
     <td style="padding: 8px 0; text-align: right;">{{ job.page_count }}</td>
   </tr>
   <tr>
@@ -23,7 +23,7 @@
 </table>
 
 <p style="text-align: center; margin: 24px 0;">
-  <a href="{{ download_url }}" class="btn">Download Processed PDF</a>
+  <a href="{{ download_url }}" class="btn">Download PDF Stealth Document</a>
 </p>
 
 <div class="callout">

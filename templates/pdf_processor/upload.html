@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Process PDF Document — Humatron{% endblock %}
+{% block title %}PDF Stealth — Humatron{% endblock %}
 
 {% block content %}
 <div class="panel" style="max-width: 600px; margin: 30px auto;">
   <div class="panel-header">
-    <h1>Upload & Process PDF</h1>
+    <h1>Upload & Process with PDF Stealth</h1>
     <a href="{% url 'pdf_processor:history' %}" class="btn btn-secondary btn-sm">History</a>
   </div>
 
-  <p>Select a PDF document from your computer. The server will flatten each page into a clean, image-based PDF and provide an instant download button.</p>
+  <p>Select a PDF document from your computer. Humatron's PDF Stealth service sanitizes and optimizes your file to bypass AI detectors, plagiarism scanners, and inspection controls while preserving visible content.</p>
 
   {% if not allowed %}
     <div class="alert alert-warning" style="margin-top: 16px;">
@@ -62,11 +62,11 @@
       </div>
 
       <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: 24px;">
-        Security Notice: Files are processed in an isolated environment. Text, vector layers, and metadata are flattened into images. Files are automatically removed after 7 days.
+        Security Notice: Files are processed via PDF Stealth in an isolated environment. Sanitizes token structures to bypass AI detection and plagiarism crawlers while maintaining flawless visible content. Files are automatically removed after your session or 7 days.
       </div>
 
       <button type="submit" id="upload-submit-btn" class="btn btn-primary btn-block btn-lg" style="padding: 14px; font-size: 16px; font-weight: 600; cursor: pointer;">
-        Upload and Process PDF
+        Run PDF Stealth on Document
       </button>
     </form>
   {% endif %}
