@@ -19,11 +19,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
+    pdf_limit = serializers.IntegerField(read_only=True)
+    max_file_size_mb = serializers.IntegerField(read_only=True)
+    max_pages_per_pdf = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = SubscriptionPlan
         fields = [
-            'id', 'name', 'code', 'description', 'price',
-            'currency', 'price_etb', 'duration_days',
+            'id', 'name', 'code', 'slug', 'description', 'price',
+            'currency', 'billing_period', 'usage_limit', 'max_file_size',
+            'processing_priority', 'features',
+            'price_etb', 'duration_days',
             'pdf_limit', 'max_file_size_mb', 'max_pages_per_pdf'
         ]
 

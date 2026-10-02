@@ -18,9 +18,9 @@ from django.utils import timezone
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 
-from .forms import RegistrationForm, LoginForm, ProfileForm, StudentVerificationForm
-from .models import DeviceTrialSignal, StudentVerification, ApprovedEducationalDomain
-from .tokens import email_verification_token, educational_email_token
+from .forms import RegistrationForm, LoginForm, ProfileForm
+from .models import DeviceTrialSignal
+from .tokens import email_verification_token
 from notifications.services import EmailService
 from subscriptions.services import SubscriptionService
 from pdf_processor.models import PDFProcessingJob
@@ -134,6 +134,25 @@ def login_view(request):
 
 
 def logout_view(request):
+    # Purge any processed PDF files from this session upon logout
+    session_key = getattr(request, 'session', None) and request.session.session_key
+    job_ids = getattr(request, 'session', None) and request.session.get('pdf_job_ids', [])
+    user = request.user if (hasattr(request, 'user') and request.user.is_authenticated) else None
+
+    from pdf_processor.models import PDFProcessingJob
+    jobs = PDFProcessingJob.objects.filter(is_files_deleted=False)
+    if session_key:
+        for job in jobs.filter(session_key=session_key):
+            job.purge_files()
+    if job_ids:
+        for job in jobs.filter(id__in=job_ids):
+            if not job.is_files_deleted:
+                job.purge_files()
+    if user:
+        for job in jobs.filter(user=user):
+            if not job.is_files_deleted:
+                job.purge_files()
+
     logout(request)
     messages.info(request, 'You have been signed out.')
     return redirect('accounts:login')
@@ -148,22 +167,28 @@ def dashboard_view(request):
     # Calculate usage metrics
     if subscription:
         used_count = subscription.used_count
+        is_unlimited = getattr(subscription, 'is_unlimited', False)
         limit = subscription.pdf_limit
-        remaining = max(0, limit - used_count)
+        remaining = "Unlimited" if is_unlimited else max(0, limit - used_count)
+        start_date = subscription.start_date
         expires_at = subscription.end_date
         plan_name = subscription.plan.name
-        status = subscription.status
+        status = subscription.get_status_display() if hasattr(subscription, 'get_status_display') else subscription.status
     elif trial_available:
         used_count = 0
+        is_unlimited = False
         limit = 1
         remaining = 1
+        start_date = None
         expires_at = None
         plan_name = "Free Trial"
         status = "Active Trial (1 Document)"
     else:
         used_count = 1 if user.trial_used else 0
+        is_unlimited = False
         limit = 0
         remaining = 0
+        start_date = None
         expires_at = None
         plan_name = "No Active Subscription"
         status = "Expired / Limit Reached"
@@ -177,6 +202,8 @@ def dashboard_view(request):
         'used_count': used_count,
         'limit': limit,
         'remaining': remaining,
+        'is_unlimited': is_unlimited,
+        'start_date': start_date,
         'expires_at': expires_at,
         'plan_name': plan_name,
         'status': status,
@@ -223,130 +250,4 @@ class CustomPasswordResetCompleteView(BasePasswordResetCompleteView):
     template_name = 'accounts/password_reset_complete.html'
 
 
-@login_required
-def student_verification_view(request):
-    """
-    Handles student discount verification requests:
-    - Educational email
-    - Educational institution
-    - Student ID document (JPG/PNG/PDF max 10MB)
-    - Expiration date
-    """
-    user = request.user
-    verification, _ = StudentVerification.objects.get_or_create(user=user)
-
-    if request.method == 'POST':
-        form = StudentVerificationForm(request.POST, request.FILES, instance=verification)
-        if form.is_valid():
-            sv = form.save(commit=False)
-            sv.user = user
-            sv.educational_domain = sv.educational_email.split('@')[-1].lower()
-            
-            # Check if email changed or is not verified
-            original_email = StudentVerification.objects.filter(pk=verification.pk).values_list('educational_email', flat=True).first() if verification.pk else None
-            email_changed = original_email != sv.educational_email
-
-            if email_changed or not sv.educational_email_verified:
-                sv.educational_email_verified = False
-                sv.status = StudentVerification.STATUS_PENDING
-                sv.submitted_at = timezone.now()
-                sv.rejection_reason = ''
-                sv.save()
-                
-                # Send verification email
-                EmailService.send_educational_verification_email(user, sv.educational_email, request=request)
-                messages.success(
-                    request,
-                    f"Student verification submitted! A verification link has been sent to your educational email ({sv.educational_email}). "
-                    "Please check your inbox and click the verification link to proceed."
-                )
-            else:
-                # Email already verified, updating documents
-                sv.status = StudentVerification.STATUS_UNDER_REVIEW
-                sv.submitted_at = timezone.now()
-                sv.rejection_reason = ''
-                sv.save()
-                messages.success(
-                    request,
-                    "Student ID document updated and submitted for administrator review."
-                )
-            return redirect('accounts:student_verification')
-    else:
-        form = StudentVerificationForm(instance=verification)
-
-    context = {
-        'form': form,
-        'verification': verification,
-        'is_verified': user.is_verified_student,
-    }
-    return render(request, 'accounts/student_verification.html', context)
-
-
-@login_required
-def resend_educational_email_view(request):
-    """Resends the educational email verification link."""
-    user = request.user
-    verification = getattr(user, 'student_verification', None)
-    if not verification or not verification.educational_email:
-        messages.error(request, "No educational email found to verify.")
-        return redirect('accounts:student_verification')
-
-    if verification.educational_email_verified:
-        messages.info(request, "Your educational email is already verified.")
-        return redirect('accounts:student_verification')
-
-    EmailService.send_educational_verification_email(user, verification.educational_email, request=request)
-    messages.success(request, f"Verification link resent to {verification.educational_email}.")
-    return redirect('accounts:student_verification')
-
-
-@login_required
-def verify_educational_email_view(request, uidb64, token):
-    """
-    Verifies educational email using cryptographic single-use token.
-    """
-    try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
-
-    if user and educational_email_token.check_token(user, token):
-        verification = getattr(user, 'student_verification', None)
-        if verification:
-            verification.educational_email_verified = True
-            if verification.student_id_file and verification.student_id_expiration_date:
-                verification.status = StudentVerification.STATUS_UNDER_REVIEW
-            else:
-                verification.status = StudentVerification.STATUS_EMAIL_VERIFIED
-            verification.save()
-            messages.success(
-                request,
-                "Your educational email has been successfully verified! "
-                "Your application is now under review by our administration team."
-            )
-        else:
-            messages.success(request, "Educational email verified.")
-        return redirect('accounts:student_verification')
-    else:
-        messages.error(request, "Invalid or expired educational verification link.")
-        return redirect('accounts:student_verification')
-
-
-@login_required
-def student_id_document_view(request, verification_id):
-    """
-    Secure access to student ID document. Only the owner or staff can view it.
-    Prevents public direct URL exposure.
-    """
-    verification = get_object_or_404(StudentVerification, pk=verification_id)
-    if request.user != verification.user and not request.user.is_staff:
-        return HttpResponseForbidden("You do not have permission to view this document.")
-
-    if not verification.student_id_file or not verification.student_id_file.storage.exists(verification.student_id_file.name):
-        raise Http404("Document file not found.")
-
-    content_type, _ = mimetypes.guess_type(verification.student_id_file.name)
-    content_type = content_type or 'application/octet-stream'
-    return FileResponse(verification.student_id_file.open('rb'), content_type=content_type)
 

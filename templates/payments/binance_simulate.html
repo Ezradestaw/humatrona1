@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Binance Pay Simulation — Humatron{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 520px; margin: 40px auto; padding: 32px; border: 2px solid #f3ba2f; border-radius: 8px;">
+  <div style="display: flex; align-items: center; margin-bottom: 20px;">
+    <div style="width: 40px; height: 40px; background: #f3ba2f; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #181a20; margin-right: 12px; font-size: 20px;">
+      B
+    </div>
+    <div>
+      <h2 style="margin: 0; color: #181a20; font-size: 20px;">Binance Pay Sandbox Simulator</h2>
+      <span style="font-size: 12px; color: #718096;">Development / Testing Environment</span>
+    </div>
+  </div>
+
+  <div style="background: #f7fafc; border: 1px solid #edf2f7; border-radius: 6px; padding: 16px; margin-bottom: 24px; font-size: 14px;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+      <span style="color: #718096;">Plan</span>
+      <strong>{{ payment.plan.name }}</strong>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+      <span style="color: #718096;">Merchant Trade No</span>
+      <span style="font-family: var(--font-mono); font-size: 12px;">{{ payment.merchant_trade_no }}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+      <span style="color: #718096;">Total Amount</span>
+      <strong style="color: #2b6cb0; font-size: 18px;">{{ payment.amount }} {{ payment.currency }}</strong>
+    </div>
+    <div style="display: flex; justify-content: space-between;">
+      <span style="color: #718096;">Prepay ID</span>
+      <span style="font-family: var(--font-mono); font-size: 12px;">{{ payment.prepay_id }}</span>
+    </div>
+  </div>
+
+  <p style="font-size: 13px; color: #718096; margin-bottom: 24px;">
+    This is an automated local testing environment simulation. Real funds are NOT transferred.
+  </p>
+
+  <form method="post" style="display: flex; gap: 12px;">
+    {% csrf_token %}
+    <button type="submit" name="action" value="confirm" class="btn btn-primary" style="flex: 1; background: #f3ba2f; color: #181a20; border-color: #f3ba2f; font-weight: 600;">
+      Simulate Successful Payment
+    </button>
+    <button type="submit" name="action" value="cancel" class="btn btn-secondary" style="flex: 1;">
+      Cancel Order
+    </button>
+  </form>
+</div>
+{% endblock %}

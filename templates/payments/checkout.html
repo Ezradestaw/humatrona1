@@ -6,71 +6,40 @@
 <div class="panel" style="max-width: 760px; margin: 0 auto;">
   <div class="panel-header">
     <h1>Subscribe to {{ plan.name }}</h1>
-    <a href="{% url 'subscriptions:plans' %}" class="btn btn-secondary btn-sm">Change Plan</a>
+    <a href="{% url 'subscriptions:plans' %}" class="btn btn-secondary btn-sm">&larr; Change Plan</a>
   </div>
-
-  {% if pricing.is_student_discount %}
-    <div class="alert alert-success" style="margin-bottom: 20px;">
-      <strong>Student Discount Applied:</strong> 25% discount has been applied to this plan based on your verified student credentials.
-    </div>
-  {% else %}
-    <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 12px 16px; border-radius: 4px; margin-bottom: 20px; font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
-      <span>Are you an actively enrolled student? Get 25% off all subscription plans.</span>
-      <a href="{% url 'accounts:student_verification' %}" class="btn btn-secondary btn-sm" style="white-space: nowrap; margin-left: 12px;">Verify Student ID</a>
-    </div>
-  {% endif %}
 
   <div class="grid-2" style="margin-bottom: 28px;">
     <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 18px; border-radius: 4px;">
       <h3 style="color: var(--color-primary); margin-bottom: 8px;">Order Summary</h3>
       <p style="font-size: 14px; margin-bottom: 6px;"><strong>Plan:</strong> {{ plan.name }}</p>
-      <p style="font-size: 14px; margin-bottom: 6px;"><strong>Duration:</strong> {{ plan.duration_days }} days</p>
-      <p style="font-size: 14px; margin-bottom: 6px;"><strong>Document Limit:</strong> {{ plan.pdf_limit }} PDFs</p>
-      <p style="font-size: 14px; margin-bottom: 6px;"><strong>Maximum File Size:</strong> {{ plan.max_file_size_mb }} MB</p>
-      <p style="font-size: 14px; margin-bottom: 0;"><strong>Maximum Pages:</strong> {{ plan.max_pages_per_pdf }} pages</p>
+      <p style="font-size: 14px; margin-bottom: 6px;"><strong>Duration:</strong> 1 Month ({{ plan.billing_period|default:"month" }})</p>
+      <p style="font-size: 14px; margin-bottom: 6px;">
+        <strong>Document Limit:</strong> 
+        {% if plan.usage_limit == 0 %}Unlimited processing{% else %}{{ plan.usage_limit }} PDFs/month{% endif %}
+      </p>
+      <p style="font-size: 14px; margin-bottom: 6px;"><strong>Maximum File Size:</strong> {{ plan.max_file_size }} MB</p>
+      <p style="font-size: 14px; margin-bottom: 0;"><strong>Processing Priority:</strong> {{ plan.processing_priority }}</p>
     </div>
 
     <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 18px; border-radius: 4px; display: flex; flex-direction: column; justify-content: center;">
       <span style="font-size: 12px; color: var(--color-text-subtle); text-transform: uppercase; font-weight: 600;">Pricing Breakdown</span>
       {% if is_ethiopia %}
         {% if pricing.has_configured_etb %}
-          {% if pricing.is_student_discount %}
-            <div style="font-size: 14px; color: var(--color-text-subtle); text-decoration: line-through; margin-top: 4px;">
-              Original: {{ pricing.original_etb|floatformat:2 }} ETB
-            </div>
-            <div style="font-size: 13px; color: var(--color-success); font-weight: 600;">
-              Student Discount (25%): -{{ pricing.discount_etb|floatformat:2 }} ETB
-            </div>
-            <div style="font-size: 28px; font-weight: 700; color: var(--color-primary); margin: 6px 0;">
-              {{ pricing.final_etb|floatformat:2 }} <span style="font-size: 16px; font-weight: 400; color: var(--color-text-subtle);">ETB</span>
-            </div>
-          {% else %}
-            <div style="font-size: 32px; font-weight: 700; color: var(--color-primary); margin: 6px 0;">
-              {{ pricing.final_etb|floatformat:2 }} <span style="font-size: 16px; font-weight: 400; color: var(--color-text-subtle);">ETB</span>
-            </div>
-          {% endif %}
+          <div style="font-size: 32px; font-weight: 700; color: var(--color-primary); margin: 6px 0;">
+            {{ pricing.final_etb|floatformat:2 }} <span style="font-size: 16px; font-weight: 400; color: var(--color-text-subtle);">ETB</span>
+          </div>
         {% else %}
           <div style="font-size: 14px; color: var(--color-warning); margin-top: 8px;">
             ETB price for this plan is pending administrator configuration.
           </div>
         {% endif %}
       {% else %}
-        {% if pricing.is_student_discount %}
-          <div style="font-size: 14px; color: var(--color-text-subtle); text-decoration: line-through; margin-top: 4px;">
-            Original: ${{ pricing.original_usd|floatformat:2 }} USD
-          </div>
-          <div style="font-size: 13px; color: var(--color-success); font-weight: 600;">
-            Student Discount (25%): -${{ pricing.discount_usd|floatformat:2 }} USD
-          </div>
-          <div style="font-size: 28px; font-weight: 700; color: var(--color-primary); margin: 6px 0;">
-            ${{ pricing.final_usd|floatformat:2 }} <span style="font-size: 16px; font-weight: 400; color: var(--color-text-subtle);">USD</span>
-          </div>
-        {% else %}
-          <div style="font-size: 32px; font-weight: 700; color: var(--color-primary); margin: 6px 0;">
-            ${{ pricing.final_usd|floatformat:2 }} <span style="font-size: 16px; font-weight: 400; color: var(--color-text-subtle);">USD</span>
-          </div>
-        {% endif %}
+        <div style="font-size: 32px; font-weight: 700; color: var(--color-primary); margin: 6px 0;">
+          ${{ pricing.final_usd|floatformat:2 }} <span style="font-size: 16px; font-weight: 400; color: var(--color-text-subtle);">USD</span>
+        </div>
       {% endif %}
+      <span style="font-size: 12px; color: var(--color-text-subtle);">Renews monthly. Cancel or renew anytime.</span>
     </div>
   </div>
 
@@ -96,10 +65,10 @@
           Payable Amount: <strong>{{ pricing.final_etb|floatformat:2 }} ETB</strong>
         </div>
         <p style="font-size: 13px; color: var(--color-text-subtle);">
-          After transferring, you will receive an SMS from Telebirr containing a transaction confirmation reference number. Paste that message to verify and instantly activate your subscription.
+          After completing the transfer to the Phone Number and Name above, enter and submit your Telebirr transaction number to verify and instantly activate your subscription.
         </p>
         <div style="margin-top: 16px;">
-          <a href="{% url 'payments:verify_telebirr' plan.code %}" class="btn btn-primary">
+          <a href="{% url 'payments:verify_telebirr' plan.slug|default:plan.code %}" class="btn btn-primary">
             Proceed to Telebirr Message Verification &rarr;
           </a>
         </div>
@@ -111,25 +80,29 @@
     {% endif %}
 
   {% else %}
-    {# International account: PayPal only #}
-    <div style="border: 2px solid var(--color-primary); border-radius: 4px; padding: 20px; background: white;">
+    {# International account: Binance Pay #}
+    <div style="border: 2px solid #f3ba2f; border-radius: 6px; padding: 22px; background: white;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 style="color: var(--color-primary); margin-bottom: 0;">PayPal (USD ${{ pricing.final_usd|floatformat:2 }})</h3>
-        <span class="badge badge-active">Default Payment Method</span>
-      </div>
-      <p style="font-size: 14px;">
-        Pay securely with your PayPal account, debit card, or credit card.
-      </p>
-      <div style="margin-top: 16px;">
-        <form method="post" action="{% url 'payments:capture_paypal' plan.code %}">
-          {% csrf_token %}
-          <div class="form-group" style="max-width: 360px;">
-            <label class="form-label" for="paypal_order_id_intl">PayPal Order / Transaction ID</label>
-            <input type="text" name="order_id" id="paypal_order_id_intl" class="form-input" placeholder="e.g. 8MC91238472910" required>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; background: #f3ba2f; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #181a20; font-size: 16px;">
+            B
           </div>
-          <button type="submit" class="btn btn-primary">Verify & Activate Subscription</button>
-        </form>
+          <div>
+            <h3 style="color: #181a20; margin: 0; font-size: 18px;">Binance Pay</h3>
+            <span style="font-size: 12px; color: var(--color-text-subtle);">Fast, zero gas fee cryptocurrency payment</span>
+          </div>
+        </div>
+        <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 600;">USDT &bull; Admin Verified</span>
       </div>
+      <p style="font-size: 14px; margin-bottom: 14px; color: var(--color-text);">
+        Transfer USDT securely via Binance to our official receiving UID, and submit your transaction ID for rapid administrator verification.
+      </p>
+      <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 12px 16px; border-radius: 4px; margin-bottom: 18px; font-size: 14px;">
+        Payable Amount: <strong style="color: #181a20; font-size: 18px;">{{ pricing.final_usd|floatformat:2 }} USDT</strong>
+      </div>
+      <a href="{% url 'payments:binance_manual_checkout' plan.slug|default:plan.code %}" class="btn btn-primary" style="background: #f3ba2f; color: #181a20; border-color: #f3ba2f; font-weight: 700; padding: 12px 24px; display: inline-block;">
+        Proceed to Pay with Binance &rarr;
+      </a>
     </div>
   {% endif %}
 </div>

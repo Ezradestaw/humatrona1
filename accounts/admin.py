@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.utils.html import format_html
-from .models import User, DeviceTrialSignal, ApprovedEducationalDomain, StudentVerification
+from .models import User, DeviceTrialSignal
 from audit.services import log_admin_action
 
 
@@ -101,102 +100,4 @@ class DeviceTrialSignalAdmin(admin.ModelAdmin):
         return f"{obj.fingerprint_hash[:16]}..."
     fingerprint_hash_short.short_description = 'Fingerprint Hash'
 
-
-@admin.register(ApprovedEducationalDomain)
-class ApprovedEducationalDomainAdmin(admin.ModelAdmin):
-    list_display = ('domain', 'institution_name', 'country', 'is_active', 'created_at')
-    list_filter = ('is_active', 'country')
-    search_fields = ('domain', 'institution_name', 'country')
-    list_editable = ('is_active',)
-
-
-@admin.register(StudentVerification)
-class StudentVerificationAdmin(admin.ModelAdmin):
-    list_display = (
-        'user',
-        'educational_email',
-        'educational_institution',
-        'educational_email_verified',
-        'student_id_expiration_date',
-        'status',
-        'is_discount_active',
-        'submitted_at',
-        'reviewed_by',
-    )
-    list_filter = ('status', 'educational_email_verified', 'created_at')
-    search_fields = ('user__email', 'educational_email', 'educational_institution')
-    readonly_fields = (
-        'submitted_at',
-        'verified_at',
-        'rejected_at',
-        'reviewed_by',
-        'reviewed_at',
-        'created_at',
-        'updated_at',
-        'view_document_link',
-    )
-    fieldsets = (
-        ('User & Contact', {
-            'fields': ('user', 'educational_email', 'educational_institution', 'educational_domain', 'educational_email_verified')
-        }),
-        ('Student ID Credentials', {
-            'fields': ('student_id_file', 'view_document_link', 'student_id_expiration_date')
-        }),
-        ('Verification Status & Review', {
-            'fields': ('status', 'rejection_reason', 'reviewed_by', 'reviewed_at', 'verified_at', 'rejected_at')
-        }),
-        ('Audit Timestamps', {
-            'fields': ('submitted_at', 'created_at', 'updated_at'),
-            'classes': ('collapse',),
-        }),
-    )
-    actions = ['approve_verifications', 'reject_verifications']
-
-    def is_discount_active(self, obj):
-        return obj.is_active_and_verified
-    is_discount_active.boolean = True
-    is_discount_active.short_description = '25% Discount Active'
-
-    def view_document_link(self, obj):
-        if obj.student_id_file:
-            from django.urls import reverse
-            url = reverse('accounts:student_id_document', args=[obj.id])
-            return format_html('<a href="{}" target="_blank" class="button">View / Download Document</a>', url)
-        return "No file uploaded"
-    view_document_link.short_description = 'Student ID Document'
-
-    @admin.action(description="Approve selected student verifications (Grant 25% Discount)")
-    def approve_verifications(self, request, queryset):
-        from django.utils import timezone
-        from notifications.services import EmailService
-        count = 0
-        for sv in queryset:
-            sv.status = StudentVerification.STATUS_VERIFIED
-            sv.verified_at = timezone.now()
-            sv.reviewed_by = request.user
-            sv.reviewed_at = timezone.now()
-            sv.rejection_reason = ''
-            sv.save()
-            EmailService.send_student_verification_approved_email(sv.user)
-            log_admin_action(request, 'student_verification_approved', sv.user.email, {'verification_id': sv.id})
-            count += 1
-        self.message_user(request, f"{count} student verification(s) approved and notifications sent.")
-
-    @admin.action(description="Reject selected student verifications")
-    def reject_verifications(self, request, queryset):
-        from django.utils import timezone
-        from notifications.services import EmailService
-        count = 0
-        for sv in queryset:
-            reason = sv.rejection_reason or "Student ID document or educational credentials could not be verified."
-            sv.status = StudentVerification.STATUS_REJECTED
-            sv.rejected_at = timezone.now()
-            sv.reviewed_by = request.user
-            sv.reviewed_at = timezone.now()
-            sv.rejection_reason = reason
-            sv.save()
-            EmailService.send_student_verification_rejected_email(sv.user, reason)
-            log_admin_action(request, 'student_verification_rejected', sv.user.email, {'verification_id': sv.id, 'reason': reason})
-            count += 1
-        self.message_user(request, f"{count} student verification(s) rejected and notifications sent.")
 

@@ -6,7 +6,7 @@
 <div class="panel" style="text-align: center; padding: 36px 20px;">
   <h1>Subscription Plans</h1>
   <p class="lead" style="max-width: 640px; margin: 0 auto;">
-    Choose the right capacity for your PDF conversion needs. All plans include high-resolution rendering, page dimension preservation, and secure 7-day retention.
+    Choose the right capacity for your PDF conversion needs. High-resolution rendering, page dimension preservation, and secure 7-day retention across all tiers.
   </p>
   {% if user.is_authenticated %}
     {% if is_ethiopia %}
@@ -15,23 +15,17 @@
       </div>
     {% else %}
       <div class="badge badge-info" style="margin-top: 14px; font-size: 13px; padding: 6px 12px;">
-        Registered Country: {{ user.country }} &bull; PayPal checkout available
-      </div>
-    {% endif %}
-    {% if user.is_verified_student %}
-      <div style="margin-top: 8px;">
-        <span class="badge" style="background: #2e7d32; color: #fff; font-size: 13px; padding: 4px 10px;">
-          Verified Student: 25% Discount Applied at Checkout
-        </span>
+        Registered Country: {{ user.country }} &bull; Binance Pay checkout available
       </div>
     {% endif %}
   {% endif %}
 </div>
 
 {% if current_subscription %}
-  <div class="alert alert-info" style="display: flex; justify-content: space-between; align-items: center;">
+  <div class="alert alert-info" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
     <div>
-      You currently have an active <strong>{{ current_subscription.plan.name }}</strong> plan ({{ current_subscription.remaining_quota }} of {{ current_subscription.pdf_limit }} PDFs remaining).
+      You currently have an active <strong>{{ current_subscription.plan.name }}</strong> plan 
+      ({% if current_subscription.is_unlimited %}Unlimited PDFs{% else %}{{ current_subscription.remaining_quota }} of {{ current_subscription.pdf_limit }} PDFs remaining{% endif %}).
     </div>
     <a href="{% url 'subscriptions:my_subscription' %}" class="btn btn-secondary btn-sm">Manage Active Plan</a>
   </div>
@@ -39,37 +33,86 @@
 
 <div class="grid-4" style="margin-top: 24px;">
   {% for plan in plans %}
-    <div class="plan-card {% if plan.code == 'professional' %}featured{% endif %}">
-      {% if plan.code == 'professional' %}
-        <div class="plan-tag">RECOMMENDED</div>
-      {% endif %}
-      <h2>{{ plan.name }}</h2>
-      <p style="font-size: 13px; min-height: 48px; margin-top: 6px;">{{ plan.description }}</p>
-
-      <div class="plan-price">${{ plan.price|floatformat:0 }} <span class="plan-currency-sub">USD / {{ plan.duration_days }} days</span></div>
-      {% if user.is_authenticated and is_ethiopia and plan.price_etb %}
-        <div style="font-size: 13px; font-weight: 500; color: var(--color-primary-hover); margin-bottom: 12px;">
-          {{ plan.price_etb|floatformat:0 }} ETB (Telebirr)
-        </div>
-      {% else %}
-        <div style="margin-bottom: 12px;"></div>
-      {% endif %}
-
-      <ul class="plan-features">
-        <li><strong>{{ plan.pdf_limit }}</strong> Processed PDFs</li>
-        <li>Up to <strong>{{ plan.max_file_size_mb }} MB</strong> per file</li>
-        <li>Up to <strong>{{ plan.max_pages_per_pdf }}</strong> pages / document</li>
-        <li>150 DPI Rasterization</li>
-        <li>Asynchronous Celery Processing</li>
-      </ul>
-
-      <a href="{% url 'payments:checkout' plan.code %}" class="btn {% if plan.code == 'professional' %}btn-primary{% else %}btn-secondary{% endif %} btn-block">
-        {% if current_subscription and current_subscription.plan == plan %}
-          Renew This Plan
-        {% else %}
-          Choose {{ plan.name }}
+    <div class="plan-card {% if plan.slug == 'pro' or plan.code == 'pro' %}featured{% endif %}" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        {% if plan.slug == 'pro' or plan.code == 'pro' %}
+          <div class="plan-tag">POPULAR</div>
+        {% elif plan.slug == 'unlimited' or plan.code == 'unlimited' %}
+          <div class="plan-tag" style="background: #10b981;">BEST VALUE</div>
         {% endif %}
-      </a>
+        <h2>{{ plan.name }}</h2>
+        <p style="font-size: 13px; min-height: 42px; margin-top: 6px; color: var(--color-text-subtle);">
+          {{ plan.description }}
+        </p>
+
+        <div class="plan-price" style="margin: 16px 0 12px 0;">
+          ${{ plan.price|floatformat:0 }} 
+          <span class="plan-currency-sub" style="font-size: 14px; font-weight: 500;">/ {{ plan.billing_period|default:"month" }}</span>
+        </div>
+
+        {% if user.is_authenticated and is_ethiopia %}
+          {% if plan.price == 0 or plan.slug == 'free' %}
+            <div style="font-size: 13px; font-weight: 600; color: var(--color-primary-hover); margin-bottom: 12px;">
+              Free (Telebirr)
+            </div>
+          {% elif plan.price_etb %}
+            <div style="font-size: 13px; font-weight: 600; color: var(--color-primary-hover); margin-bottom: 12px;">
+              {{ plan.price_etb|floatformat:0 }} ETB (Telebirr)
+            </div>
+          {% endif %}
+        {% endif %}
+
+        <ul class="plan-features" style="text-align: left; margin: 18px 0; padding-left: 0; list-style: none;">
+          {% if plan.features %}
+            {% for feature in plan.features %}
+              <li style="padding: 5px 0; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                <span style="color: #10b981; font-weight: bold;">✓</span> {{ feature }}
+              </li>
+            {% endfor %}
+          {% else %}
+            <li style="padding: 5px 0; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+              <span style="color: #10b981; font-weight: bold;">✓</span>
+              {% if plan.usage_limit == 0 %}<strong>Unlimited</strong> processing{% else %}<strong>{{ plan.usage_limit }}</strong> PDFs/month{% endif %}
+            </li>
+            <li style="padding: 5px 0; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+              <span style="color: #10b981; font-weight: bold;">✓</span>
+              <strong>{{ plan.max_file_size }} MB</strong> maximum file size
+            </li>
+            <li style="padding: 5px 0; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+              <span style="color: #10b981; font-weight: bold;">✓</span>
+              {{ plan.processing_priority }} processing priority
+            </li>
+            <li style="padding: 5px 0; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+              <span style="color: #10b981; font-weight: bold;">✓</span>
+              High-resolution rasterization
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div style="margin-top: 16px;">
+        {% if current_subscription and current_subscription.plan == plan %}
+          {% if plan.price == 0 %}
+            <button class="btn btn-secondary btn-block" disabled style="opacity: 0.7; cursor: default;">
+              Current Active Plan
+            </button>
+          {% else %}
+            <a href="{% url 'payments:checkout' plan.slug|default:plan.code %}" class="btn btn-primary btn-block">
+              Renew This Plan
+            </a>
+          {% endif %}
+        {% else %}
+          {% if plan.price == 0 %}
+            <a href="{% url 'payments:checkout' plan.slug|default:plan.code %}" class="btn btn-secondary btn-block">
+              Get Started Free
+            </a>
+          {% else %}
+            <a href="{% url 'payments:checkout' plan.slug|default:plan.code %}" class="btn {% if plan.slug == 'pro' or plan.code == 'pro' %}btn-primary{% else %}btn-secondary{% endif %} btn-block">
+              Choose {{ plan.name }}
+            </a>
+          {% endif %}
+        {% endif %}
+      </div>
     </div>
   {% endfor %}
 </div>

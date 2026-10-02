@@ -5,3 +5,6 @@ class PdfProcessorConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'pdf_processor'
     verbose_name = 'PDF Processor & Jobs'
+
+    def ready(self):
+        import pdf_processor.signals  # noqa

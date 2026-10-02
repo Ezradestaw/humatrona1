@@ -36,12 +36,19 @@
       </div>
 
       <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--color-border);">
-        <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">PDF Document Allowance</div>
         <div style="font-size: 28px; font-weight: 700; color: var(--color-primary);">
-          {{ subscription.used_count }} / {{ subscription.pdf_limit }}
+          {% if subscription.is_unlimited %}
+            {{ subscription.used_count }} PDFs (Unlimited)
+          {% else %}
+            {{ subscription.used_count }} / {{ subscription.pdf_limit }}
+          {% endif %}
         </div>
         <div style="font-size: 14px; color: var(--color-text-muted); margin-top: 4px;">
-          <strong>{{ subscription.used_count }}</strong> processed &bull; <strong>{{ subscription.remaining_quota }}</strong> remaining
+          {% if subscription.is_unlimited %}
+            <strong>{{ subscription.used_count }}</strong> processed this period &bull; Unlimited fair-use processing active
+          {% else %}
+            <strong>{{ subscription.used_count }}</strong> processed &bull; <strong>{{ subscription.remaining_quota }}</strong> remaining
+          {% endif %}
         </div>
       </div>
 

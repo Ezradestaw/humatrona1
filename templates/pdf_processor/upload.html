@@ -23,6 +23,15 @@
       {% if is_trial %}
         <span class="badge badge-active">Free Trial</span>
         <span style="margin-left: 8px;">1 document available &bull; Max <strong>{{ max_size_mb }} MB</strong> &bull; Max <strong>{{ max_pages }} pages</strong></span>
+      {% elif subscription %}
+        <span class="badge badge-active">{{ subscription.plan.name }} Plan</span>
+        <span style="margin-left: 8px;">
+          {% if subscription.is_unlimited %}
+            <strong>{{ subscription.used_count }}</strong> PDFs processed this month (Unlimited) &bull; Max <strong>{{ max_size_mb }} MB</strong>
+          {% else %}
+            <strong>{{ subscription.used_count }} of {{ subscription.pdf_limit }}</strong> PDFs used this month &bull; Max <strong>{{ max_size_mb }} MB</strong>
+          {% endif %}
+        </span>
       {% else %}
         <span class="badge badge-active">Active Plan</span>
         <span style="margin-left: 8px;">Max file size: <strong>{{ max_size_mb }} MB</strong> &bull; Max pages: <strong>{{ max_pages }} pages</strong></span>

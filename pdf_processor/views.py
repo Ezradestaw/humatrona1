@@ -43,6 +43,11 @@ def upload_view(request):
                 for chunk in uploaded_file.chunks():
                     destination.write(chunk)
 
+            # Ensure session key exists for session-scoped lifecycle
+            if not request.session.session_key:
+                request.session.save()
+            session_key = request.session.session_key or ''
+
             # Create job record
             job = PDFProcessingJob.objects.create(
                 user=user,
@@ -50,8 +55,14 @@ def upload_view(request):
                 stored_filename=random_filename,
                 page_count=page_count,
                 input_size=file_size,
-                status=PDFProcessingJob.STATUS_QUEUED
+                status=PDFProcessingJob.STATUS_QUEUED,
+                session_key=session_key,
             )
+
+            # Track in session for removal after session ends
+            session_job_ids = request.session.get('pdf_job_ids', [])
+            session_job_ids.append(str(job.id))
+            request.session['pdf_job_ids'] = session_job_ids
 
             # Immediately and reliably process the PDF document
             try:
@@ -83,6 +94,7 @@ def upload_view(request):
     else:
         form = PDFUploadForm(user=user)
 
+    sub = SubscriptionService.get_active_subscription(user)
     context = {
         'form': form,
         'allowed': allowed,
@@ -90,6 +102,7 @@ def upload_view(request):
         'is_trial': is_trial,
         'max_size_mb': max_size_mb,
         'max_pages': max_pages,
+        'subscription': sub,
     }
     return render(request, 'pdf_processor/upload.html', context)
 

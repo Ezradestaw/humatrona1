@@ -31,7 +31,7 @@ The following issues are strictly out of scope:
 
 - Denial of Service (DoS) through network volume/brute force beyond defined application rate limits.
 - Social engineering, phishing, or physical attacks against employees or infrastructure.
-- Issues related to third-party services (e.g. PayPal sandbox outages).
+- Issues related to third-party services (e.g. third-party API sandbox outages).
 
 ## Core Security Architectures Implemented
 

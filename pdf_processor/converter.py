@@ -8,6 +8,12 @@ from PIL import Image
 import pymupdf
 from django.conf import settings
 from pdf_processor.stealth import apply_stealth_degradation
+from pdf_processor.subtle_noise_ocr import (
+    apply_subtle_noise,
+    ocr_page,
+    apply_invisible_ocr_layer,
+    MAX_INVISIBLE_BYTES,
+)
 
 logger = logging.getLogger('humatron')
 
@@ -107,22 +113,31 @@ class PDFToImagePDFConverter:
             pass
 
     @classmethod
-    def convert(cls, input_file_path, output_file_path, dpi=None, metadata=None, stealth_config=None):
+    def convert(cls, input_file_path, output_file_path, dpi=None, metadata=None, stealth_config=None,
+                subtle_noise=None, noise_strength=None, invisible_ocr=None):
         """
         Executes conversion inside an isolated temporary directory.
-        Returns dictionary with {page_count, output_size_bytes, stealth_reports}.
+        Returns dictionary with {page_count, output_size_bytes, stealth_reports, invisible_unicode_bytes}.
         Pipeline:
         Original PDF -> Read PDF -> Render pages to images -> Process images / transparent layer
+        -> Apply subtle Gaussian noise (extremely subtle)
         -> Apply OCR Stealth Degradation (SSIM budget calibrated)
-        -> Generate completely new PDF -> Apply minimal controlled metadata -> Store final PDF
+        -> Generate completely new PDF -> Insert raster image
+        -> Embed invisible Unicode OCR text layer (render_mode=3) with sparse ZWSP
+        -> Apply minimal controlled metadata -> Store final PDF
         """
         configured_dpi = getattr(settings, 'PDF_RENDER_DPI', cls.DEFAULT_DPI)
         render_dpi = dpi or configured_dpi
         temp_dir = tempfile.mkdtemp(prefix="humatron_proc_")
 
+        subtle_noise_enabled = getattr(settings, 'PDF_SUBTLE_NOISE_ENABLED', True) if subtle_noise is None else subtle_noise
+        noise_str = getattr(settings, 'PDF_SUBTLE_NOISE_STRENGTH', 0.2) if noise_strength is None else noise_strength
+        ocr_enabled = getattr(settings, 'PDF_INVISIBLE_OCR_ENABLED', False) if invisible_ocr is None else invisible_ocr
+
         in_doc = None
         out_doc = None
         stealth_reports = []
+        total_invisible_bytes = 0
 
         try:
             if not os.path.exists(input_file_path):
@@ -162,6 +177,11 @@ class PDFToImagePDFConverter:
                 # 4. Alpha composite operation combining image and transparent layer (Section 21)
                 composited_image = Image.alpha_composite(base_image, transparent_layer)
 
+                # 4.5 Apply subtle Gaussian noise before converting to PDF (extremely subtle)
+                if subtle_noise_enabled and noise_str and noise_str > 0:
+                    composited_rgb = apply_subtle_noise(composited_image.convert("RGB"), strength=noise_str)
+                    composited_image = composited_rgb.convert("RGBA")
+
                 # 5. Apply OCR Stealth Degradation after transparent layer
                 stealth_enabled = getattr(settings, 'PDF_STEALTH_ENABLED', True) if stealth_config is None or 'enabled' not in stealth_config else stealth_config['enabled']
                 if stealth_enabled:
@@ -197,7 +217,7 @@ class PDFToImagePDFConverter:
                 else:
                     final_rgb = composited_image.convert("RGB")
                     img_buffer = io.BytesIO()
-                    final_rgb.save(img_buffer, format="JPEG", quality=92, optimize=True)
+                    final_rgb.save(img_buffer, format="JPEG", quality=95, optimize=True)
                     img_bytes = img_buffer.getvalue()
                     final_rgb.close()
                     img_buffer.close()
@@ -212,6 +232,23 @@ class PDFToImagePDFConverter:
                 new_page = out_doc.new_page(width=rect.width, height=rect.height)
                 # 7. Insert rendered raster image to completely occupy original page boundaries
                 new_page.insert_image(rect, stream=img_bytes)
+
+                # 7.5 Apply invisible Unicode OCR text layer if enabled (render_mode=3)
+                if ocr_enabled:
+                    try:
+                        ocr_dpi = getattr(settings, 'PDF_INVISIBLE_OCR_DPI', 200)
+                        max_inv_bytes = getattr(settings, 'PDF_MAX_INVISIBLE_BYTES', MAX_INVISIBLE_BYTES)
+                        ocr_data = ocr_page(page, dpi=ocr_dpi)
+                        added_inv_bytes = apply_invisible_ocr_layer(
+                            new_page=new_page,
+                            page_rect=rect,
+                            ocr_data=ocr_data,
+                            total_invisible_bytes=total_invisible_bytes,
+                            max_invisible_bytes=max_inv_bytes,
+                        )
+                        total_invisible_bytes += added_inv_bytes
+                    except Exception as ocr_exc:
+                        logger.warning("Optional invisible OCR text layer skipped on page %d: %s", page_idx + 1, ocr_exc)
 
                 # Dereference image bytes
                 img_bytes = None
@@ -237,6 +274,7 @@ class PDFToImagePDFConverter:
                 'page_count': page_count,
                 'output_size_bytes': output_size,
                 'stealth_reports': stealth_reports,
+                'invisible_unicode_bytes': total_invisible_bytes,
             }
 
         except Exception as exc:

@@ -1,5 +1,6 @@
 from datetime import timedelta
 import logging
+from decimal import Decimal
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -9,50 +10,29 @@ from notifications.services import EmailService
 logger = logging.getLogger('humatron')
 
 
-from decimal import Decimal, ROUND_HALF_UP
-
-
 class PricingCalculator:
     """
-    Sections 15, 16, 18, 19:
     Authoritative server-side pricing calculation engine with Decimal arithmetic.
-    Applies 25% student discount strictly when the authenticated user is a verified student.
+    Retrieves plan prices strictly from database plan configuration.
     """
 
-    STUDENT_DISCOUNT_PERCENT = Decimal('25.00')
-
     @classmethod
-    def calculate(cls, plan, user):
-        is_student = bool(user and user.is_authenticated and getattr(user, 'is_verified_student', False))
-        discount_percentage = cls.STUDENT_DISCOUNT_PERCENT if is_student else Decimal('0.00')
-
-        # 1. USD Pricing (PayPal / Default)
+    def calculate(cls, plan, user=None):
         original_usd = Decimal(str(plan.price))
-        if is_student:
-            discount_usd = (original_usd * Decimal('0.25')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-            final_usd = original_usd - discount_usd
-        else:
-            discount_usd = Decimal('0.00')
-            final_usd = original_usd
+        final_usd = original_usd
+        discount_usd = Decimal('0.00')
 
-        # 2. ETB Pricing (Telebirr - ONLY if explicitly configured by administrator per Sec 1)
-        has_configured_etb = bool(plan.price_etb and plan.price_etb > 0)
+        has_configured_etb = (plan.price_etb is not None)
         if has_configured_etb:
             original_etb = Decimal(str(plan.price_etb))
-            if is_student:
-                discount_etb = (original_etb * Decimal('0.25')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                final_etb = original_etb - discount_etb
-            else:
-                discount_etb = Decimal('0.00')
-                final_etb = original_etb
+            final_etb = original_etb
+            discount_etb = Decimal('0.00')
         else:
             original_etb = None
             discount_etb = None
             final_etb = None
 
         return {
-            'is_student_discount': is_student,
-            'discount_percentage': discount_percentage,
             'original_usd': original_usd,
             'discount_usd': discount_usd,
             'final_usd': final_usd,
@@ -60,11 +40,12 @@ class PricingCalculator:
             'original_etb': original_etb,
             'discount_etb': discount_etb,
             'final_etb': final_etb,
+            'discount_percentage': Decimal('0.00'),
         }
 
 
 class SubscriptionService:
-    """Authoritative business logic for plans, subscriptions, and quotas."""
+    """Authoritative business logic for plans, subscriptions, renewals, and quotas."""
 
     @classmethod
     def get_active_subscription(cls, user):
@@ -93,7 +74,7 @@ class SubscriptionService:
 
     @classmethod
     def is_trial_available(cls, user):
-        """Determines if the user can use the 1-time free PDF trial (Sec 23)."""
+        """Determines if the user can use the 1-time free PDF trial."""
         if not user or not user.is_authenticated:
             return False
         if not user.is_email_verified:
@@ -109,7 +90,7 @@ class SubscriptionService:
     @classmethod
     def can_process_pdf(cls, user, file_size_bytes=0, page_count=0):
         """
-        Section 22: Authoritative verification pipeline:
+        Authoritative verification pipeline:
         Authenticated? -> Email verified? -> Subscription/trial valid? -> Usage remaining? -> File within limits?
         Returns tuple: (is_allowed: bool, message: str, is_trial: bool, max_size_mb: int, max_pages: int)
         """
@@ -125,11 +106,18 @@ class SubscriptionService:
         # 1. Check active subscription
         sub = cls.get_active_subscription(user)
         if sub:
-            if sub.remaining_quota <= 0:
-                return False, f"You have reached your subscription limit of {sub.pdf_limit} PDFs. Please renew or upgrade.", False, sub.plan.max_file_size_mb, sub.plan.max_pages_per_pdf
+            # Check unlimited vs quota-limited
+            if sub.is_unlimited:
+                # Backend fair-use server protection against automated abuse
+                fair_use_limit = getattr(settings, 'UNLIMITED_PLAN_FAIR_USE_LIMIT', 5000)
+                if sub.used_count >= fair_use_limit:
+                    return False, f"Fair-use limit reached ({sub.used_count} of {fair_use_limit} PDFs used this month). Please contact support for high-volume enterprise needs.", False, sub.plan.max_file_size, max_pages
+            else:
+                if sub.remaining_quota <= 0:
+                    return False, f"You have reached your subscription limit of {sub.pdf_limit} PDFs ({sub.used_count} of {sub.pdf_limit} PDFs used this month). Please upgrade or renew your plan.", False, sub.plan.max_file_size, max_pages
 
-            allowed_size_mb = sub.plan.max_file_size_mb or max_upload_size_mb
-            allowed_pages = sub.plan.max_pages_per_pdf or max_pages
+            allowed_size_mb = sub.plan.max_file_size or max_upload_size_mb
+            allowed_pages = max_pages
 
             if file_size_bytes > (allowed_size_mb * 1024 * 1024):
                 return False, f"File size exceeds plan limit of {allowed_size_mb} MB.", False, allowed_size_mb, allowed_pages
@@ -141,7 +129,7 @@ class SubscriptionService:
 
         # 2. Check 1 free PDF trial
         if cls.is_trial_available(user):
-            trial_max_size_mb = 25
+            trial_max_size_mb = 10
             trial_max_pages = 50
 
             if file_size_bytes > (trial_max_size_mb * 1024 * 1024):
@@ -157,37 +145,52 @@ class SubscriptionService:
     @classmethod
     @transaction.atomic
     def activate_subscription(cls, user, plan, payment_method, duration_days=None,
-                              student_discount_applied=False, discount_percentage=Decimal('0.00'),
                               payment_country=""):
         """
-        Activates a subscription atomically inside a database transaction.
-        Transitions any previous active subscription to CANCELLED.
+        Activates or renews a subscription atomically inside a database transaction.
+        For renewals:
+        - If an existing subscription is still active, extend from the existing expiration date.
+        - If expired or new, start from the approval date (now) and extend 1 month (30 days).
+        Idempotent and atomic to prevent duplicate subscription activation.
         """
         now = timezone.now()
-        days = duration_days or plan.duration_days
-        end_date = now + timedelta(days=days)
+        days = duration_days or plan.duration_days or 30
 
-        # Mark prior active subscriptions as replaced/cancelled
-        Subscription.objects.filter(
+        # Check for active existing subscription
+        active_sub = Subscription.objects.filter(
             user=user,
             status=Subscription.STATUS_ACTIVE
-        ).update(status=Subscription.STATUS_CANCELLED)
+        ).order_by('-end_date').first()
+
+        if active_sub and active_sub.end_date and active_sub.end_date > now:
+            # Renewal of currently active subscription: extend from existing expiration date
+            start_date = active_sub.start_date or now
+            end_date = active_sub.end_date + timedelta(days=days)
+            active_sub.status = Subscription.STATUS_CANCELLED
+            active_sub.save(update_fields=['status'])
+        else:
+            # Expired or new subscription: start from approval date (now)
+            start_date = now
+            end_date = now + timedelta(days=days)
+            # Expire any prior stale records
+            Subscription.objects.filter(
+                user=user,
+                status=Subscription.STATUS_ACTIVE
+            ).update(status=Subscription.STATUS_EXPIRED)
 
         sub = Subscription.objects.create(
             user=user,
             plan=plan,
             status=Subscription.STATUS_ACTIVE,
-            start_date=now,
+            start_date=start_date,
             end_date=end_date,
-            pdf_limit=plan.pdf_limit,
+            pdf_limit=plan.usage_limit if plan.usage_limit is not None else 50,
             used_count=0,
             payment_method=payment_method,
-            payment_country=payment_country or user.country,
-            student_discount_applied=student_discount_applied,
-            discount_percentage=discount_percentage
+            payment_country=payment_country or getattr(user, 'country', ''),
         )
 
         EmailService.send_subscription_activated_email(user, sub)
-        logger.info("Subscription activated for user %s: Plan %s, Valid until %s (Discount: %s%%)",
-                    user.email, plan.name, end_date, discount_percentage)
+        logger.info("Subscription activated for user %s: Plan %s, Valid until %s",
+                    user.email, plan.name, end_date)
         return sub

@@ -6,35 +6,56 @@
 <div class="panel" style="max-width: 640px; margin: 0 auto;">
   <div class="panel-header">
     <h1>Verify Telebirr Payment</h1>
-    <a href="{% url 'payments:checkout' plan.code %}" class="btn btn-secondary btn-sm">Back to Checkout</a>
+    <a href="{% url 'payments:checkout' plan.slug|default:plan.code %}" class="btn btn-secondary btn-sm">Back to Checkout</a>
   </div>
 
-  <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 16px; border-radius: 4px; margin-bottom: 20px;">
-    <strong>Plan:</strong> {{ plan.name }} &bull; <strong>Required Amount:</strong> {{ pricing.final_etb|floatformat:2 }} ETB
-    {% if pricing.is_student_discount %}
-      <span class="badge" style="background: #2e7d32; color: #fff; margin-left: 8px;">25% Student Discount Applied</span>
-    {% endif %}
+  <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 18px; border-radius: 6px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <div><strong>Plan:</strong> {{ plan.name }}</div>
+      <div style="font-size: 20px; font-weight: 700; color: var(--color-primary);">{{ pricing.final_etb|floatformat:2 }} ETB</div>
+    </div>
+    <div style="background: white; border: 1px solid var(--color-border); border-radius: 4px; padding: 12px 14px; font-size: 14px; line-height: 1.6;">
+      <div>Name / Receiver Name: <strong>{{ telebirr_merchant }}</strong></div>
+      <div>Telebirr Phone Number: <strong style="font-family: var(--font-mono); font-size: 15px;">{{ telebirr_phone }}</strong></div>
+    </div>
   </div>
 
-  <p>
-    After transferring exactly <strong>{{ pricing.final_etb|floatformat:2 }} ETB</strong> via Telebirr, paste the confirmation SMS message received from Telebirr into the field below:
+  <p style="font-size: 14px; color: var(--color-text);">
+    Transfer exactly <strong>{{ pricing.final_etb|floatformat:2 }} ETB</strong> via Telebirr to <strong>{{ telebirr_phone }}</strong> ({{ telebirr_merchant }}). Upon completion, enter your Telebirr transaction number below:
   </p>
 
-  <form method="post" action="{% url 'payments:verify_telebirr' plan.code %}" novalidate style="margin-top: 20px;">
+  <form method="post" action="{% url 'payments:verify_telebirr' plan.slug|default:plan.code %}" novalidate style="margin-top: 20px;">
     {% csrf_token %}
 
-    <div class="form-group">
-      <label class="form-label" for="id_raw_message">Telebirr Confirmation SMS Text</label>
+    {% if form.non_field_errors %}
+      <div class="alert alert-error" style="margin-bottom: 16px;">
+        {% for error in form.non_field_errors %}
+          <p style="margin: 0;">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="form-group" style="margin-bottom: 16px;">
+      <label class="form-label" for="{{ form.transaction_id.id_for_label }}">
+        {{ form.transaction_id.label }} <span style="color: var(--color-error);">*</span>
+      </label>
+      {{ form.transaction_id }}
+      <div class="form-help">{{ form.transaction_id.help_text }}</div>
+      {% if form.transaction_id.errors %}<div class="form-error">{{ form.transaction_id.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-group" style="margin-bottom: 20px;">
+      <label class="form-label" for="{{ form.raw_message.id_for_label }}">{{ form.raw_message.label }}</label>
       {{ form.raw_message }}
       <div class="form-help">{{ form.raw_message.help_text }}</div>
       {% if form.raw_message.errors %}<div class="form-error">{{ form.raw_message.errors.0 }}</div>{% endif %}
     </div>
 
     <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 4px; font-size: 13px; color: var(--color-warning); margin-bottom: 20px;">
-      <strong>Notice:</strong> The verification service parses the transaction reference number and verifies that the transferred amount strictly matches or exceeds {{ pricing.final_etb|floatformat:2 }} ETB. Duplicate or previously used transaction references will be rejected.
+      <strong>Notice:</strong> Your transaction number will be verified against the transferred amount ({{ pricing.final_etb|floatformat:2 }} ETB). Duplicate or previously used transaction references will be rejected.
     </div>
 
-    <button type="submit" class="btn btn-primary btn-block">
+    <button type="submit" class="btn btn-primary btn-block" style="padding: 12px; font-size: 16px; font-weight: 700;">
       Verify Payment & Activate Subscription
     </button>
   </form>

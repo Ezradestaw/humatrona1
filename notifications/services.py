@@ -316,98 +316,6 @@ class EmailService:
         )
         return success
 
-    @classmethod
-    def send_educational_verification_email(cls, user, educational_email, request=None):
-        """Educational email verification link for 25% student discount (Section 10)."""
-        from accounts.tokens import educational_email_token
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = educational_email_token.make_token(user)
-
-        if request:
-            verify_url = request.build_absolute_uri(
-                reverse('accounts:verify_educational_email', kwargs={'uidb64': uid, 'token': token})
-            )
-        else:
-            domain = getattr(settings, 'SITE_DOMAIN', 'humatron.me')
-            path = reverse('accounts:verify_educational_email', kwargs={'uidb64': uid, 'token': token})
-            verify_url = f"https://{domain}{path}"
-
-        context = {
-            'user': user,
-            'verify_url': verify_url,
-            'student_headline': "Verify your student educational email",
-            'student_message': f"We received a request to verify {educational_email} for your Humatron student discount (25% off).",
-        }
-
-        subject = "Humatron: Verify your student educational email"
-        text_message = render_to_string('email/student_verification/message.txt', context)
-        html_message = render_to_string('email/student_verification/message.html', context)
-
-        success, _ = cls._dispatch_email(
-            recipient_email=educational_email,
-            subject=subject,
-            message_text=text_message,
-            notification_type='email_verification',
-            html_message=html_message,
-            user=user,
-            mailbox='support'
-        )
-        return success
-
-    @classmethod
-    def send_student_verification_approved_email(cls, user):
-        """Student verification approved notification (Section 10)."""
-        context = {
-            'user': user,
-            'student_headline': "Your 25% Student Discount Has Been Approved!",
-            'student_message': (
-                "Congratulations! Your student status has been reviewed and verified by our administration team. "
-                "A 25% discount is now active on your account and will automatically apply to your subscription checkout."
-            ),
-        }
-
-        subject = "Humatron: Your 25% Student Discount Has Been Approved!"
-        text_message = render_to_string('email/student_verification/message.txt', context)
-        html_message = render_to_string('email/student_verification/message.html', context)
-
-        success, _ = cls._dispatch_email(
-            recipient_email=user.email,
-            subject=subject,
-            message_text=text_message,
-            notification_type='subscription_activated',
-            html_message=html_message,
-            user=user,
-            mailbox='support'
-        )
-        return success
-
-    @classmethod
-    def send_student_verification_rejected_email(cls, user, reason):
-        """Student verification rejected notification (Section 10)."""
-        context = {
-            'user': user,
-            'student_headline': "Student Verification Status Update",
-            'student_message': (
-                f"Thank you for submitting your student verification. Unfortunately, your submission could not be approved at this time.\n\n"
-                f"Reason: {reason}\n\n"
-                f"You may submit an updated, valid student ID with current expiration date via your profile."
-            ),
-        }
-
-        subject = "Humatron: Student Verification Status Update"
-        text_message = render_to_string('email/student_verification/message.txt', context)
-        html_message = render_to_string('email/student_verification/message.html', context)
-
-        success, _ = cls._dispatch_email(
-            recipient_email=user.email,
-            subject=subject,
-            message_text=text_message,
-            notification_type='payment_failed',
-            html_message=html_message,
-            user=user,
-            mailbox='support'
-        )
-        return success
 
     @classmethod
     def send_pdf_completed_email(cls, user, job, download_url):
@@ -512,3 +420,154 @@ class EmailService:
             notification_type='contact_message',
             mailbox=mailbox
         )
+
+    @classmethod
+    def send_binance_manual_payment_submitted_email(cls, user, payment):
+        """Notification sent when user submits Binance manual payment info (awaiting review)."""
+        plan_name = payment.plan.name if payment.plan else 'Subscription'
+        subject = f"Humatron: Binance Payment Submitted ({plan_name})"
+        message_text = (
+            f"Hello {user.email},\n\n"
+            f"Your manual Binance payment submission for the {plan_name} plan has been received and is awaiting administrator verification.\n\n"
+            f"Payment Details:\n"
+            f"- Transaction ID: {payment.transaction_id}\n"
+            f"- Amount: {payment.currency} {payment.amount}\n"
+            f"- Sender Identifier: {payment.sender_identifier or 'N/A'}\n"
+            f"- Current Status: Under Review (Pending)\n\n"
+            f"Once our administration team verifies the transfer on Binance, your subscription will be activated automatically.\n\n"
+            f"Best regards,\nHumatron Support Team\nsupport@humatron.me"
+        )
+        return cls._dispatch_email(
+            recipient_email=user.email,
+            subject=subject,
+            message_text=message_text,
+            notification_type='payment_submitted',
+            user=user,
+            mailbox='support'
+        )
+
+    @classmethod
+    def send_binance_manual_payment_approved_email(cls, user, payment):
+        """Notification sent when administrator approves manual Binance payment."""
+        plan_name = payment.plan.name if payment.plan else 'Subscription'
+        subject = f"Humatron: Binance Payment Approved! ({plan_name})"
+        end_date_str = payment.subscription.end_date.strftime('%B %d, %Y') if (payment.subscription and payment.subscription.end_date) else 'active'
+        message_text = (
+            f"Hello {user.email},\n\n"
+            f"Great news! Your manual Binance payment has been verified and approved by a Humatron administrator.\n\n"
+            f"Subscription Summary:\n"
+            f"- Plan: {plan_name}\n"
+            f"- Transaction ID: {payment.transaction_id}\n"
+            f"- Amount Confirmed: {payment.currency} {payment.amount}\n"
+            f"- Status: Active\n"
+            f"- Valid Until: {end_date_str}\n\n"
+            f"You can now begin processing PDF documents on Humatron.\n\n"
+            f"Best regards,\nHumatron Support Team\nsupport@humatron.me"
+        )
+        return cls._dispatch_email(
+            recipient_email=user.email,
+            subject=subject,
+            message_text=message_text,
+            notification_type='payment_approved',
+            user=user,
+            mailbox='support'
+        )
+
+    @classmethod
+    def send_binance_manual_payment_rejected_email(cls, user, payment, reason=""):
+        """Notification sent when administrator rejects manual Binance payment."""
+        plan_name = payment.plan.name if payment.plan else 'Subscription'
+        subject = "Humatron: Binance Payment Verification Update"
+        reason_text = reason or payment.rejection_reason or "Verification details could not be matched."
+        message_text = (
+            f"Hello {user.email},\n\n"
+            f"We are writing to let you know that your manual Binance payment for the {plan_name} plan could not be verified.\n\n"
+            f"Transaction ID: {payment.transaction_id}\n"
+            f"Reason for rejection:\n{reason_text}\n\n"
+            f"If you believe this was an error or need assistance, please reply to this email or contact support@humatron.me with your Binance transfer receipt.\n\n"
+            f"Best regards,\nHumatron Support Team\nsupport@humatron.me"
+        )
+        return cls._dispatch_email(
+            recipient_email=user.email,
+            subject=subject,
+            message_text=message_text,
+            notification_type='payment_rejected',
+            user=user,
+            mailbox='support'
+        )
+
+    @classmethod
+    def send_telebirr_payment_submitted_email(cls, user, payment):
+        """Notification sent when user submits Telebirr transaction number (awaiting review)."""
+        plan_name = payment.plan.name if payment.plan else 'Subscription'
+        subject = f"Humatron: Telebirr Payment Submitted ({plan_name})"
+        message_text = (
+            f"Hello {user.email},\n\n"
+            f"Your Telebirr payment submission for the {plan_name} plan has been received and is awaiting administrator verification.\n\n"
+            f"Payment Details:\n"
+            f"- Transaction Number: {payment.transaction_id}\n"
+            f"- Amount: {payment.currency} {payment.amount}\n"
+            f"- Current Status: Under Review (Pending)\n\n"
+            f"Once our administration team verifies the transaction, your subscription will be activated automatically.\n\n"
+            f"Best regards,\nHumatron Support Team\nsupport@humatron.me"
+        )
+        return cls._dispatch_email(
+            recipient_email=user.email,
+            subject=subject,
+            message_text=message_text,
+            notification_type='payment_submitted',
+            user=user,
+            mailbox='support'
+        )
+
+    @classmethod
+    def send_telebirr_payment_approved_email(cls, user, payment):
+        """Notification sent when administrator approves Telebirr payment."""
+        plan_name = payment.plan.name if payment.plan else 'Subscription'
+        subject = f"Humatron: Telebirr Payment Approved! ({plan_name})"
+        end_date_str = payment.subscription.end_date.strftime('%B %d, %Y') if (payment.subscription and payment.subscription.end_date) else 'active'
+        message_text = (
+            f"Hello {user.email},\n\n"
+            f"Great news! Your Telebirr payment has been verified and approved by a Humatron administrator.\n\n"
+            f"Subscription Summary:\n"
+            f"- Plan: {plan_name}\n"
+            f"- Transaction Number: {payment.transaction_id}\n"
+            f"- Amount Confirmed: {payment.currency} {payment.amount}\n"
+            f"- Status: Active\n"
+            f"- Valid Until: {end_date_str}\n\n"
+            f"You can now begin processing PDF documents on Humatron.\n\n"
+            f"Best regards,\nHumatron Support Team\nsupport@humatron.me"
+        )
+        return cls._dispatch_email(
+            recipient_email=user.email,
+            subject=subject,
+            message_text=message_text,
+            notification_type='payment_approved',
+            user=user,
+            mailbox='support'
+        )
+
+    @classmethod
+    def send_telebirr_payment_rejected_email(cls, user, payment, reason=""):
+        """Notification sent when administrator rejects Telebirr payment."""
+        plan_name = payment.plan.name if payment.plan else 'Subscription'
+        subject = "Humatron: Telebirr Payment Verification Update"
+        reason_text = reason or payment.rejection_reason or "Verification details could not be matched."
+        message_text = (
+            f"Hello {user.email},\n\n"
+            f"We are writing to let you know that your Telebirr payment for the {plan_name} plan could not be verified.\n\n"
+            f"Transaction Number: {payment.transaction_id}\n"
+            f"Reason for rejection:\n{reason_text}\n\n"
+            f"If you believe this was an error or need assistance, please reply to this email or contact support@humatron.me.\n\n"
+            f"Best regards,\nHumatron Support Team\nsupport@humatron.me"
+        )
+        return cls._dispatch_email(
+            recipient_email=user.email,
+            subject=subject,
+            message_text=message_text,
+            notification_type='payment_rejected',
+            user=user,
+            mailbox='support'
+        )
+
+

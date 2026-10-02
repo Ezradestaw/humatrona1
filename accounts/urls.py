@@ -12,11 +12,6 @@ urlpatterns = [
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('profile/', views.profile_view, name='profile'),
     
-    # Student Verification
-    path('student-verification/', views.student_verification_view, name='student_verification'),
-    path('student-verification/resend/', views.resend_educational_email_view, name='resend_educational_email'),
-    path('student-verification/verify-email/<str:uidb64>/<str:token>/', views.verify_educational_email_view, name='verify_educational_email'),
-    path('student-verification/document/<int:verification_id>/', views.student_id_document_view, name='student_id_document'),
 
     # Password Reset
     path('password-reset/', views.CustomPasswordResetView.as_view(), name='password_reset'),

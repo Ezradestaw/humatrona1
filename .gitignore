@@ -35,6 +35,7 @@ venv.bak/
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # Django
 *.log
@@ -55,3 +56,7 @@ celerybeat.pid
 .DS_Store
 Thumbs.db
 dump.rdb
+
+# Local binary packages
+opt/
+

@@ -250,7 +250,7 @@ class MinimalPDFMetadataTests(TestCase):
             max_pages_per_pdf=50
         )
         from subscriptions.services import SubscriptionService
-        SubscriptionService.activate_subscription(user, plan, 'PayPal')
+        SubscriptionService.activate_subscription(user, plan, 'Binance Pay')
 
         # Place input in media/uploads
         upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')

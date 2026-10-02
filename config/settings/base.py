@@ -216,23 +216,35 @@ if PDF_STEALTH_STRENGTH is not None and str(PDF_STEALTH_STRENGTH).strip():
         PDF_STEALTH_STRENGTH = None
 else:
     PDF_STEALTH_STRENGTH = None
-PDF_STEALTH_GEO = env.float('PDF_STEALTH_GEO', default=1.0)
+PDF_STEALTH_GEO = env.float('PDF_STEALTH_GEO', default=0.0)
 PDF_STEALTH_TILE = env.int('PDF_STEALTH_TILE', default=256)
-PDF_STEALTH_SKIP = env.str('PDF_STEALTH_SKIP', default='')
+PDF_STEALTH_SKIP = env.str('PDF_STEALTH_SKIP', default='overlay,geometry')
 PDF_STEALTH_ONLY = env.str('PDF_STEALTH_ONLY', default='')
 PDF_STEALTH_SEED = env.int('PDF_STEALTH_SEED', default=0)
+
+# Subtle Noise & Invisible Unicode OCR Settings
+PDF_SUBTLE_NOISE_ENABLED = env.bool('PDF_SUBTLE_NOISE_ENABLED', default=True)
+PDF_SUBTLE_NOISE_STRENGTH = env.float('PDF_SUBTLE_NOISE_STRENGTH', default=0.2)  # 0.1-0.5 = extremely to very subtle
+PDF_INVISIBLE_OCR_ENABLED = env.bool('PDF_INVISIBLE_OCR_ENABLED', default=False)
+PDF_INVISIBLE_OCR_DPI = env.int('PDF_INVISIBLE_OCR_DPI', default=200)
+PDF_MAX_INVISIBLE_BYTES = env.int('PDF_MAX_INVISIBLE_BYTES', default=1024 * 1024)  # 1 MB
 
 
 
 # Payments Configuration
-PAYPAL_MODE = env('PAYPAL_MODE', default='sandbox')
-PAYPAL_CLIENT_ID = env('PAYPAL_CLIENT_ID', default='')
-PAYPAL_CLIENT_SECRET = env('PAYPAL_CLIENT_SECRET', default='')
-
 TELEBIRR_RECEIVER_PHONE = env('TELEBIRR_RECEIVER_PHONE', default='0911000000')
 TELEBIRR_MERCHANT_NAME = env('TELEBIRR_MERCHANT_NAME', default='Humatron')
 TELEBIRR_USD_TO_ETB_RATE = env.float('TELEBIRR_USD_TO_ETB_RATE', default=135.0)
 TELEBIRR_DEFAULT_PRICE_ETB = env.float('TELEBIRR_DEFAULT_PRICE_ETB', default=6750.0)
+
+# Binance Pay Configuration (Official Merchant API)
+BINANCE_PAY_CERTIFICATE_SN = env('BINANCE_PAY_CERTIFICATE_SN', default=env('BINANCE_PAY_API_KEY', default=''))
+BINANCE_PAY_API_KEY = env('BINANCE_PAY_API_KEY', default=BINANCE_PAY_CERTIFICATE_SN)
+BINANCE_PAY_SECRET_KEY = env('BINANCE_PAY_SECRET_KEY', default='')
+BINANCE_PAY_BASE_URL = env('BINANCE_PAY_BASE_URL', default='https://bpay.binanceapi.com')
+BINANCE_PAY_RETURN_URL = env('BINANCE_PAY_RETURN_URL', default='')
+BINANCE_PAY_CANCEL_URL = env('BINANCE_PAY_CANCEL_URL', default='')
+BINANCE_PAY_WEBHOOK_URL = env('BINANCE_PAY_WEBHOOK_URL', default='')
 
 # Security & Cookies
 SESSION_COOKIE_HTTPONLY = True

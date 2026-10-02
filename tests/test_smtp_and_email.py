@@ -21,7 +21,7 @@ class SMTPEmailRoutingAndSecurityTests(TestCase):
     - Dedicated sender routing: support@humatron.me vs. contact@humatron.me vs. admin@humatron.me
     - Registration email verification
     - Secure password-reset emails (no account leakage)
-    - User notifications (Payments, Subscriptions, Student, PDF)
+    - User notifications (Payments, Subscriptions, PDF)
     - Contact form flow (admin notification, Reply-To header, safe sender)
     - Secret sanitization (never log or expose App Passwords)
     - Administrator SMTP test tool
@@ -107,8 +107,8 @@ class SMTPEmailRoutingAndSecurityTests(TestCase):
         """Payment confirmation emails are sent from support@humatron.me."""
         payment = Payment.objects.create(
             user=self.user,
-            provider=Payment.PROVIDER_PAYPAL,
-            transaction_id='PAYPAL-TEST-TX-101',
+            provider=Payment.PROVIDER_BINANCE,
+            transaction_id='BINANCE-TEST-TX-101',
             plan=self.plan,
             amount=Decimal('50.00'),
             currency='USD',
@@ -121,7 +121,7 @@ class SMTPEmailRoutingAndSecurityTests(TestCase):
         sent_email = mail.outbox[0]
         self.assertIn("support@humatron.me", sent_email.from_email)
         self.assertEqual(sent_email.to, ['user@humatron.me'])
-        self.assertIn("PAYPAL-TEST-TX-101", sent_email.body)
+        self.assertIn("BINANCE-TEST-TX-101", sent_email.body)
 
     def test_subscription_notifications_originate_from_support(self):
         """Subscription activation and expiration emails originate from support@humatron.me."""
@@ -130,7 +130,7 @@ class SMTPEmailRoutingAndSecurityTests(TestCase):
             plan=self.plan,
             status=Subscription.STATUS_ACTIVE,
             pdf_limit=200,
-            payment_method='PayPal'
+            payment_method='Binance Pay'
         )
 
         # 1. Activation
@@ -143,19 +143,6 @@ class SMTPEmailRoutingAndSecurityTests(TestCase):
         EmailService.send_subscription_expired_email(self.user, sub)
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("support@humatron.me", mail.outbox[0].from_email)
-
-    def test_student_verification_notifications_originate_from_support(self):
-        """Student verification approval/rejection emails originate from support@humatron.me."""
-        EmailService.send_student_verification_approved_email(self.user)
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("support@humatron.me", mail.outbox[0].from_email)
-        self.assertIn("25%", mail.outbox[0].body)
-
-        mail.outbox = []
-        EmailService.send_student_verification_rejected_email(self.user, "Document blurry")
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("support@humatron.me", mail.outbox[0].from_email)
-        self.assertIn("Document blurry", mail.outbox[0].body)
 
     def test_pdf_processing_notifications_originate_from_support(self):
         """PDF completion emails originate from support@humatron.me."""

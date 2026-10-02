@@ -31,7 +31,7 @@ Trial becomes consumed
   ↓
 User chooses 1 of 4 subscription plans
   ↓
-Country determines payment provider (Ethiopia = Telebirr, Other = PayPal)
+Country determines payment provider (Ethiopia = Telebirr, Other = Binance Pay)
   ↓
 Server-side payment verification (atomic DB transaction)
   ↓
@@ -78,7 +78,7 @@ humatron/
 │
 ├── accounts/                   # User authentication, profiles, verification & device signals
 ├── subscriptions/              # 4 configurable plans, quotas & lifecycle management
-├── payments/                   # PayPal v2 API & Telebirr SMS verification engine
+├── payments/                   # Binance Pay v3 API & Telebirr SMS verification engine
 ├── pdf_processor/              # Upload validation, PyMuPDF converter, Celery tasks
 ├── notifications/              # Transactional email notification service
 ├── contact/                    # Contact form with honeypot spam protection
@@ -209,8 +209,8 @@ python manage.py test tests.test_auth
 python manage.py test tests.test_pdf_processing
 python manage.py test tests.test_trial_and_usage
 python manage.py test tests.test_subscriptions
-python manage.py test tests.test_payments_paypal
 python manage.py test tests.test_payments_telebirr
+python manage.py test tests.test_payments_binance
 python manage.py test tests.test_security
 python manage.py test tests.test_contact_and_api
 ```
@@ -287,7 +287,135 @@ sudo /var/www/humatron/deployment/restore_db.sh /var/backups/humatron/postgres/h
 
 ---
 
-## 9. License & Responsible Use
+## 9. Binance Pay Integration Guide
+
+### 1. Overview
+Humatron integrates **Binance Pay (Merchant Acquiring v3)** to allow customers worldwide to pay for SaaS subscriptions using cryptocurrency (USDT, USDC, BTC, ETH, and other supported crypto assets) with instant settlement and 0% gas fees.
+
+- **Primary Source of Truth**: [Binance Developer Documentation](https://developers.binance.com/)
+- **Merchant Management Portal**: [Binance Merchant Admin](https://merchant.binance.com/)
+
+---
+
+### 2. Binance Merchant Account Setup
+1. Register or log in to your verified business/merchant account at [merchant.binance.com](https://merchant.binance.com/).
+2. Complete Merchant Identity / Business Verification (KYC/KYB).
+3. Navigate to **Developer** / **API Management** in the merchant portal.
+4. Generate your **API Key** (Certificate Serial Number) and **Secret Key**.
+5. Set up IP Whitelisting for your production server IP addresses (optional during local testing).
+
+---
+
+### 3. Required Credentials & Environment Variables
+Add the following variables to your server `.env` file:
+
+```bash
+# Binance Pay API Credentials (Official Merchant Open API)
+BINANCE_PAY_API_KEY=your_binance_pay_certificate_sn_or_api_key
+BINANCE_PAY_SECRET_KEY=your_binance_pay_secret_key
+BINANCE_PAY_BASE_URL=https://bpay.binanceapi.com
+BINANCE_PAY_RETURN_URL=https://humatron.me/payments/binance/return/
+BINANCE_PAY_CANCEL_URL=https://humatron.me/payments/binance/cancel/
+BINANCE_PAY_WEBHOOK_URL=https://humatron.me/payments/webhook/binance/
+```
+
+> [!CAUTION]
+> **Never commit your API Secret Key to version control.** Store it strictly as a server-side environment variable.
+
+---
+
+### 4. Local Development & Simulation
+For local development, when `BINANCE_PAY_API_KEY` is omitted or set to mock values:
+- Order creation automatically operates in simulated sandbox mode.
+- Initiating a payment directs to `/payments/binance/simulate-checkout/<trade_no>/`.
+- Developers can click "Simulate Successful Payment" to test the exact webhook and activation flow end-to-end without real funds.
+- To test with live Binance Sandbox or Testnet credentials, set `BINANCE_PAY_BASE_URL` and valid test credentials in `.env`.
+
+---
+
+### 5. Webhook Configuration
+Configure your webhook notification URL in the Binance Merchant Portal:
+- **Webhook Endpoint**: `https://<your-domain>/payments/webhook/binance/`
+- **Supported Events**: `PAY_SUCCESS`, `PAY_CLOSED`, `PAY_EXPIRED`
+- **Method**: HTTP `POST`
+
+---
+
+### 6. Payment Flow & Authoritative Verification Architecture
+
+```text
+Customer selects plan on SaaS checkout
+       ↓
+Django POST /payments/binance/initiate/<plan_code>/
+       ↓
+1. Server validates user & active plan
+2. Server calculates authoritative price from database plan
+3. Server generates unique merchantTradeNo (HP<timestamp><hex>)
+4. Django calls POST /binancepay/openapi/v3/order (HMAC-SHA512 signed)
+5. Django creates pending Payment record in database
+       ↓
+Customer redirected to Binance hosted checkout URL (or scans QR)
+       ↓
+Customer completes payment on Binance
+       ↓
+Binance dispatches Webhook to /payments/webhook/binance/
+       ↓
+1. Django verifies RSA-SHA256 signature using Binance Public Key certificate
+2. Django acquires row-level lock (select_for_update) on Payment record
+3. Idempotency check: if already VERIFIED, returns SUCCESS without duplicate activation
+4. Fallback verification: queries POST /binancepay/openapi/v2/order/query
+5. Verifies orderAmount, currency (USDT), and order status (PAID)
+       ↓
+Atomic Database Transaction:
+- Payment marked VERIFIED with timestamp & Binance transaction ID
+- Subscription marked ACTIVE (quotas & validity period updated)
+- Dispatches transactional payment receipt email
+       ↓
+Customer returns to /payments/binance/return/ and receives immediate SaaS access
+```
+
+---
+
+### 7. Database Migrations & Models
+The `Payment` model in `payments/models.py` includes:
+- `provider`: Choices include `'binance'` (`PROVIDER_BINANCE`).
+- `merchant_trade_no`: Unique indexed reference for each Binance order.
+- `prepay_id`: Binance prepay order identifier.
+- `binance_order_id`: Binance transaction identifier.
+- `checkout_url`, `qr_code_url`, `qr_content`: Checkout links and QR codes.
+- `order_expire_time`: Expiration timestamp.
+- Unique constraints: `['provider', 'transaction_id']` and `unique_binance_merchant_trade_no`.
+
+To apply migrations:
+```bash
+python manage.py migrate payments
+```
+
+---
+
+### 8. Testing
+Run the dedicated Binance Pay test suite:
+```bash
+python manage.py test tests.test_payments_binance
+```
+Run all payment tests (Telebirr, Binance):
+```bash
+python manage.py test tests.test_payments_telebirr tests.test_payments_binance
+```
+
+---
+
+### 9. Security Best Practices
+- **HMAC-SHA512 Outbound Requests**: All outgoing requests are signed with timestamp and nonce.
+- **RSA-SHA256 Webhook Verification**: Inbound webhooks are verified using Binance's public key certificates fetched directly from `POST /binancepay/openapi/certificates` and cached in Redis.
+- **Zero Frontend Authority**: Subscription prices, amounts, and statuses are strictly dictated and verified by the Django backend.
+- **Timing Attacks & Tampering**: Raw body byte verification ensures no signature mismatches or tampering.
+
+---
+
+## 10. License & Responsible Use
 
 Proprietary software for **humatron.me**. All rights reserved.
 Ensure compliance with document privacy regulations in your jurisdiction.
+
+# humatrona1

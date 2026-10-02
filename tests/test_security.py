@@ -51,7 +51,7 @@ class SecurityTests(TestCase):
         )
         Payment.objects.create(
             user=self.userB,
-            provider='paypal',
+            provider='binance',
             transaction_id='TX_PRIV_B',
             amount=50.0,
             currency='USD',

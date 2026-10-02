@@ -7,29 +7,41 @@ from audit.services import log_admin_action
 class SubscriptionPlanAdmin(admin.ModelAdmin):
     list_display = (
         'name',
-        'code',
+        'slug',
         'price',
         'currency',
-        'price_etb',
-        'duration_days',
-        'pdf_limit',
-        'max_file_size_mb',
+        'billing_period',
+        'usage_limit',
+        'max_file_size',
+        'processing_priority',
         'active',
         'sort_order',
     )
-    list_filter = ('active', 'currency')
-    search_fields = ('name', 'code', 'description')
-    prepopulated_fields = {'code': ('name',)}
-    list_editable = ('price', 'price_etb', 'pdf_limit', 'max_file_size_mb', 'active', 'sort_order')
+    list_filter = ('active', 'currency', 'processing_priority', 'billing_period')
+    search_fields = ('name', 'slug', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+    list_editable = ('price', 'usage_limit', 'max_file_size', 'processing_priority', 'active', 'sort_order')
+    
+    fieldsets = (
+        ('General Information', {
+            'fields': ('name', 'slug', 'description', 'sort_order', 'active')
+        }),
+        ('Pricing & Billing', {
+            'fields': ('price', 'currency', 'billing_period', 'price_etb', 'duration_days')
+        }),
+        ('Capacity & Performance Limits', {
+            'fields': ('usage_limit', 'max_file_size', 'processing_priority', 'features')
+        }),
+    )
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        action_name = 'plan_modified' if change else 'plan_created'
-        log_admin_action(request, 'plan_modified', obj.code, {
+        log_admin_action(request, 'plan_modified' if change else 'plan_created', obj.slug, {
             'plan_name': obj.name,
             'price': str(obj.price),
-            'price_etb': str(obj.price_etb),
-            'pdf_limit': obj.pdf_limit,
+            'usage_limit': obj.usage_limit,
+            'max_file_size': obj.max_file_size,
+            'processing_priority': obj.processing_priority,
             'active': obj.active
         })
 

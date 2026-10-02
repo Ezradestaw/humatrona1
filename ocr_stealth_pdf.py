@@ -42,14 +42,12 @@ import numpy as np
 
 cv2.setNumThreads(1)
 
-# strength 0 -> NEUTRAL (no change), strength 1 -> CEIL (strongest allowed)
+# Visual preservation: strength 0 -> NEUTRAL (no change), strength 1 -> CEIL (visually imperceptible)
 NEUTRAL = dict(scale=1.0, blur=0.0, motion=0, contrast=1.0, light=0.0, glare=0.0,
                bg=0.0, stamp=0.0, bleed=0.0, noise=0.0, speckle=0.0, scratch=0, jpeg=95)
-CEIL = dict(scale=0.50, blur=1.2, motion=3, contrast=0.70, light=0.15, glare=0.10,
-            bg=0.10, stamp=0.12, bleed=0.12, noise=8.0, speckle=0.0006, scratch=5, jpeg=35)
-# geometry is not searched (SSIM punishes sub-pixel shifts that nobody can see);
-# it is applied at fixed tiny values and the photometric budget is measured after it
-GEO = dict(rot=0.15, persp=0.002, curve=0.5)
+CEIL = dict(scale=1.0, blur=0.0, motion=0, contrast=1.0, light=0.0, glare=0.0,
+            bg=0.0, stamp=0.0, bleed=0.0, noise=0.0, speckle=0.0, scratch=0, jpeg=95)
+GEO = dict(rot=0.0, persp=0.0, curve=0.0)
 
 GROUPS = {
     "geometry": [], "bleed": ["bleed"], "background": ["bg"], "overlay": ["stamp"],
@@ -89,15 +87,20 @@ def ssim(a, b):
 
 # ----------------------------------------------------------------- geometry --
 def geometry(img, g, rng):
+    rot = g.get("rot", 0)
+    persp = g.get("persp", 0)
+    curve = g.get("curve", 0)
+    if not rot and not persp and not curve:
+        return img
     h, w = img.shape[:2]
-    if g["rot"] or g["persp"]:
-        R = np.vstack([cv2.getRotationMatrix2D((w / 2, h / 2), rng.uniform(-1, 1) * g["rot"], 1.0), [0, 0, 1]])
+    if rot or persp:
+        R = np.vstack([cv2.getRotationMatrix2D((w / 2, h / 2), rng.uniform(-1, 1) * rot, 1.0), [0, 0, 1]])
         src = np.float32([[0, 0], [w, 0], [w, h], [0, h]])
-        dst = src + (rng.uniform(-g["persp"], g["persp"], (4, 2)) * [w, h]).astype(np.float32)
+        dst = src + (rng.uniform(-persp, persp, (4, 2)) * [w, h]).astype(np.float32)
         P = cv2.getPerspectiveTransform(src, dst)
         img = cv2.warpPerspective(img, P @ R, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
-    if g["curve"] > 0:
-        amp = g["curve"] * h / 1000.0
+    if curve > 0:
+        amp = curve * h / 1000.0
         cols = np.arange(w, dtype=np.float32)[None, :]
         xs = np.ascontiguousarray(np.broadcast_to(cols, (h, w)))
         ys = np.arange(h, dtype=np.float32)[:, None] + np.float32(amp) * np.sin(
@@ -108,25 +111,8 @@ def geometry(img, g, rng):
 
 # ------------------------------------------------------------- photometric --
 def overlay_layer(h, w, rng, k):
-    """Faint stamps + diagonal watermark, drawn at 1/4 resolution then upsampled."""
-    f = 4
-    hh, ww = h // f, w // f
-    font = cv2.FONT_HERSHEY_DUPLEX
-    layer = np.full((hh, ww, 3), 255, np.uint8)
-    th = max(1, int(3 * k / f))
-    for _ in range(2):
-        cx, cy = int(rng.uniform(0.15, 0.85) * ww), int(rng.uniform(0.15, 0.85) * hh)
-        r = int(0.07 * ww)
-        col = (int(rng.uniform(40, 90)), int(rng.uniform(40, 90)), int(rng.uniform(150, 220)))
-        cv2.circle(layer, (cx, cy), r, col, th, cv2.LINE_AA)
-        cv2.circle(layer, (cx, cy), int(r * 0.8), col, th, cv2.LINE_AA)
-        cv2.putText(layer, "APPROVED", (cx - int(r * 0.75), cy + int(r * 0.1)), font, r / 55.0, col, th, cv2.LINE_AA)
-    wm = np.full((hh, ww, 3), 255, np.uint8)
-    cv2.putText(wm, "CONFIDENTIAL", (int(0.12 * ww), int(0.55 * hh)), font, ww / 350.0, (150, 150, 150),
-                max(1, int(4 * k / f)), cv2.LINE_AA)
-    wm = cv2.warpAffine(wm, cv2.getRotationMatrix2D((ww / 2, hh / 2), 35, 1.0), (ww, hh), borderValue=(255, 255, 255))
-    layer = np.minimum(layer, wm)
-    return cv2.resize(layer, (w, h), interpolation=cv2.INTER_LINEAR).astype(np.float32) / 255.0
+    """Preserves visual appearance without adding watermarks, stamps, or notices."""
+    return np.ones((h, w, 3), dtype=np.float32)
 
 
 def photometric(img, P, rng, back, k):

@@ -31,7 +31,7 @@ class SubscriptionLifecycleTests(TestCase):
         )
 
     def test_active_subscription_grants_processing_permission(self):
-        sub = SubscriptionService.activate_subscription(self.user, self.plan, 'PayPal')
+        sub = SubscriptionService.activate_subscription(self.user, self.plan, 'Binance Pay')
         self.assertEqual(sub.status, Subscription.STATUS_ACTIVE)
         self.assertTrue(sub.is_valid)
 
@@ -42,7 +42,7 @@ class SubscriptionLifecycleTests(TestCase):
         self.assertEqual(max_pages, 200)
 
     def test_expired_subscription_blocks_processing(self):
-        sub = SubscriptionService.activate_subscription(self.user, self.plan, 'PayPal')
+        sub = SubscriptionService.activate_subscription(self.user, self.plan, 'Binance Pay')
         # Manually backdate end_date to simulate expiration
         sub.end_date = timezone.now() - timedelta(days=1)
         sub.save(update_fields=['end_date'])
@@ -55,7 +55,7 @@ class SubscriptionLifecycleTests(TestCase):
         self.assertFalse(allowed)
 
     def test_quota_limit_enforced(self):
-        sub = SubscriptionService.activate_subscription(self.user, self.plan, 'PayPal')
+        sub = SubscriptionService.activate_subscription(self.user, self.plan, 'Binance Pay')
         sub.used_count = 25  # Reached full limit
         sub.save(update_fields=['used_count'])
 
@@ -64,11 +64,11 @@ class SubscriptionLifecycleTests(TestCase):
         self.assertIn("limit of 25 PDFs", msg)
 
     def test_subscription_renewal(self):
-        sub1 = SubscriptionService.activate_subscription(self.user, self.plan, 'PayPal')
+        sub1 = SubscriptionService.activate_subscription(self.user, self.plan, 'Binance Pay')
         self.assertEqual(sub1.status, Subscription.STATUS_ACTIVE)
 
         # Renew
-        sub2 = SubscriptionService.activate_subscription(self.user, self.plan, 'PayPal')
+        sub2 = SubscriptionService.activate_subscription(self.user, self.plan, 'Binance Pay')
         sub1.refresh_from_db()
         self.assertEqual(sub1.status, Subscription.STATUS_CANCELLED)
         self.assertEqual(sub2.status, Subscription.STATUS_ACTIVE)

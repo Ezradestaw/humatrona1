@@ -14,7 +14,7 @@ class CountryPaymentFlowTests(TestCase):
     Tests for Sections 1-6 of the Humatron Specification Modifications:
     - Public hiding of ETB, Telebirr, and country-specific instructions
     - Server-determined payment method based on authenticated user's registered country
-    - Strict Ethiopia -> Telebirr and Non-Ethiopia -> PayPal isolation
+    - Strict Ethiopia -> Telebirr and Non-Ethiopia -> Binance Pay isolation
     """
 
     def setUp(self):
@@ -96,16 +96,18 @@ class CountryPaymentFlowTests(TestCase):
         # Should not show PayPal checkout option
         self.assertNotIn('Default Payment Method', content)
         self.assertNotIn('Pay securely with your PayPal account', content)
+        self.assertNotIn('PayPal', content)
 
-    def test_non_ethiopian_user_checkout_shows_paypal_and_hides_telebirr(self):
-        """Authenticated non-Ethiopian user sees PayPal and NOT Ethiopian payment instructions."""
+    def test_non_ethiopian_user_checkout_shows_binance_and_hides_telebirr(self):
+        """Authenticated non-Ethiopian user sees Binance Pay and NOT Ethiopian payment instructions or PayPal."""
         self.client.force_login(self.us_user)
         response = self.client.get(reverse('payments:checkout', args=['professional']))
         self.assertEqual(response.status_code, 200)
         content = response.content.decode('utf-8')
 
-        self.assertIn('PayPal', content)
+        self.assertIn('Binance Pay', content)
         self.assertIn('50.00', content)
+        self.assertNotIn('PayPal', content)
         self.assertNotIn('Proceed to Telebirr Message Verification', content)
         self.assertNotIn('Merchant Name:', content)
         self.assertNotIn('6750.00 ETB', content)
