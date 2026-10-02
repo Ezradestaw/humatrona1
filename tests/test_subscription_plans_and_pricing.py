@@ -55,7 +55,7 @@ class SubscriptionPlanAndPricingTests(TestCase):
             defaults={
                 'name': 'Basic',
                 'code': 'basic',
-                'price': Decimal('9.00'),
+                'price': Decimal('18.00'),
                 'currency': 'USD',
                 'billing_period': 'month',
                 'usage_limit': 50,
@@ -67,13 +67,17 @@ class SubscriptionPlanAndPricingTests(TestCase):
                 'sort_order': 2,
             }
         )
+        # Ensure price is always updated to doubled value
+        if self.basic_plan.price != Decimal('18.00'):
+            self.basic_plan.price = Decimal('18.00')
+            self.basic_plan.save(update_fields=['price'])
 
         self.pro_plan, _ = SubscriptionPlan.objects.get_or_create(
             slug='pro',
             defaults={
                 'name': 'Pro',
                 'code': 'pro',
-                'price': Decimal('24.00'),
+                'price': Decimal('48.00'),
                 'currency': 'USD',
                 'billing_period': 'month',
                 'usage_limit': 200,
@@ -85,13 +89,16 @@ class SubscriptionPlanAndPricingTests(TestCase):
                 'sort_order': 3,
             }
         )
+        if self.pro_plan.price != Decimal('48.00'):
+            self.pro_plan.price = Decimal('48.00')
+            self.pro_plan.save(update_fields=['price'])
 
         self.unlimited_plan, _ = SubscriptionPlan.objects.get_or_create(
             slug='unlimited',
             defaults={
                 'name': 'Unlimited',
                 'code': 'unlimited',
-                'price': Decimal('45.00'),
+                'price': Decimal('90.00'),
                 'currency': 'USD',
                 'billing_period': 'month',
                 'usage_limit': 0,
@@ -103,6 +110,9 @@ class SubscriptionPlanAndPricingTests(TestCase):
                 'sort_order': 4,
             }
         )
+        if self.unlimited_plan.price != Decimal('90.00'):
+            self.unlimited_plan.price = Decimal('90.00')
+            self.unlimited_plan.save(update_fields=['price'])
 
         self.user = User.objects.create_user(
             username='user@example.com',
@@ -128,15 +138,15 @@ class SubscriptionPlanAndPricingTests(TestCase):
         self.assertEqual(self.free_plan.max_file_size, 10)
         self.assertEqual(self.free_plan.processing_priority, 'Normal')
 
-        self.assertEqual(self.basic_plan.price, Decimal('9.00'))
+        self.assertEqual(self.basic_plan.price, Decimal('18.00'))
         self.assertEqual(self.basic_plan.usage_limit, 50)
         self.assertEqual(self.basic_plan.max_file_size, 50)
 
-        self.assertEqual(self.pro_plan.price, Decimal('24.00'))
+        self.assertEqual(self.pro_plan.price, Decimal('48.00'))
         self.assertEqual(self.pro_plan.usage_limit, 200)
         self.assertEqual(self.pro_plan.max_file_size, 100)
 
-        self.assertEqual(self.unlimited_plan.price, Decimal('45.00'))
+        self.assertEqual(self.unlimited_plan.price, Decimal('90.00'))
         self.assertEqual(self.unlimited_plan.usage_limit, 0)
         self.assertTrue(self.unlimited_plan.is_unlimited)
         self.assertEqual(self.unlimited_plan.max_file_size, 250)
@@ -148,9 +158,9 @@ class SubscriptionPlanAndPricingTests(TestCase):
         content = response.content.decode('utf-8')
 
         self.assertIn('$0', content)
-        self.assertIn('$9', content)
-        self.assertIn('$24', content)
-        self.assertIn('$45', content)
+        self.assertIn('$18', content)
+        self.assertIn('$48', content)
+        self.assertIn('$90', content)
 
         self.assertNotIn('Student', content)
         self.assertNotIn('student', content)
@@ -180,8 +190,8 @@ class SubscriptionPlanAndPricingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode('utf-8')
 
-        # Pro plan price is $24.00
-        self.assertIn('24.00', content)
+        # Pro plan price is $48.00 (doubled from original $24.00)
+        self.assertIn('48.00', content)
         self.assertIn('1104715375', content)
         self.assertIn('Copy UID', content)
         self.assertNotIn('student', content.lower())

@@ -9,19 +9,20 @@
     <a href="{% url 'payments:checkout' plan.slug|default:plan.code %}" class="btn btn-secondary btn-sm">Back to Checkout</a>
   </div>
 
+  <!-- Plan & amount summary -->
   <div style="background: #f8fafc; border: 1px solid var(--color-border); padding: 18px; border-radius: 6px; margin-bottom: 20px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
       <div><strong>Plan:</strong> {{ plan.name }}</div>
       <div style="font-size: 20px; font-weight: 700; color: var(--color-primary);">{{ pricing.final_etb|floatformat:2 }} ETB</div>
     </div>
-    <div style="background: white; border: 1px solid var(--color-border); border-radius: 4px; padding: 12px 14px; font-size: 14px; line-height: 1.6;">
-      <div>Name / Receiver Name: <strong>{{ telebirr_merchant }}</strong></div>
-      <div>Telebirr Phone Number: <strong style="font-family: var(--font-mono); font-size: 15px;">{{ telebirr_phone }}</strong></div>
+    <div style="background: white; border: 1px solid var(--color-border); border-radius: 4px; padding: 12px 14px; font-size: 14px; line-height: 1.8;">
+      <div>Recipient Name: <strong>{{ telebirr_merchant }}</strong></div>
+      <div>Telebirr Phone: <strong style="font-family: var(--font-mono); font-size: 15px;">{{ telebirr_phone }}</strong></div>
     </div>
   </div>
 
   <p style="font-size: 14px; color: var(--color-text);">
-    Transfer exactly <strong>{{ pricing.final_etb|floatformat:2 }} ETB</strong> via Telebirr to <strong>{{ telebirr_phone }}</strong> ({{ telebirr_merchant }}). Upon completion, enter your Telebirr transaction number below:
+    Transfer exactly <strong>{{ pricing.final_etb|floatformat:2 }} ETB</strong> via Telebirr to <strong>{{ telebirr_phone }}</strong> ({{ telebirr_merchant }}). After completing the transfer, enter your Telebirr transaction number below:
   </p>
 
   <form method="post" action="{% url 'payments:verify_telebirr' plan.slug|default:plan.code %}" novalidate style="margin-top: 20px;">
@@ -35,20 +36,15 @@
       </div>
     {% endif %}
 
-    <div class="form-group" style="margin-bottom: 16px;">
+    <div class="form-group" style="margin-bottom: 20px;">
       <label class="form-label" for="{{ form.transaction_id.id_for_label }}">
         {{ form.transaction_id.label }} <span style="color: var(--color-error);">*</span>
       </label>
       {{ form.transaction_id }}
       <div class="form-help">{{ form.transaction_id.help_text }}</div>
-      {% if form.transaction_id.errors %}<div class="form-error">{{ form.transaction_id.errors.0 }}</div>{% endif %}
-    </div>
-
-    <div class="form-group" style="margin-bottom: 20px;">
-      <label class="form-label" for="{{ form.raw_message.id_for_label }}">{{ form.raw_message.label }}</label>
-      {{ form.raw_message }}
-      <div class="form-help">{{ form.raw_message.help_text }}</div>
-      {% if form.raw_message.errors %}<div class="form-error">{{ form.raw_message.errors.0 }}</div>{% endif %}
+      {% if form.transaction_id.errors %}
+        <div class="form-error">{{ form.transaction_id.errors.0 }}</div>
+      {% endif %}
     </div>
 
     <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 4px; font-size: 13px; color: var(--color-warning); margin-bottom: 20px;">
@@ -56,7 +52,7 @@
     </div>
 
     <button type="submit" class="btn btn-primary btn-block" style="padding: 12px; font-size: 16px; font-weight: 700;">
-      Verify Payment & Activate Subscription
+      Submit Transaction Number &amp; Activate Subscription
     </button>
   </form>
 </div>

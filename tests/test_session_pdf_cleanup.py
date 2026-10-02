@@ -34,7 +34,7 @@ class SessionPDFCleanupTests(TestCase):
             slug='basic',
             defaults={
                 'name': 'Basic',
-                'price': Decimal('9.00'),
+                'price': Decimal('18.00'),
                 'usage_limit': 50,
                 'max_file_size': 50,
                 'active': True

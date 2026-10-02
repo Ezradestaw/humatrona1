@@ -99,12 +99,10 @@ class BinanceManualPaymentTests(TestCase):
         url = reverse('payments:binance_manual_checkout', args=['professional'])
         data = {
             'transaction_id': 'TX-BINANCE-1001',
-            'sender_identifier': 'UID-SENDER-88',
-            'amount': '50.00',
-            'note': 'Transferred via Binance Pay internal transfer',
+            # Simplified form: only transaction_id needed
         }
         response = self.client.post(url, data)
-        
+
         # Payment must exist in DB
         payment = Payment.objects.filter(transaction_id='TX-BINANCE-1001').first()
         self.assertIsNotNone(payment)
@@ -114,7 +112,6 @@ class BinanceManualPaymentTests(TestCase):
         self.assertEqual(payment.currency, 'USDT')
         self.assertEqual(payment.status, Payment.STATUS_PENDING)
         self.assertEqual(payment.payment_method, Payment.METHOD_BINANCE_MANUAL)
-        self.assertEqual(payment.sender_identifier, 'UID-SENDER-88')
 
         # Subscription must NOT be activated yet
         self.assertIsNone(payment.subscription)
@@ -130,20 +127,20 @@ class BinanceManualPaymentTests(TestCase):
         self.assertIn("Binance Payment Submitted", sent.subject)
         self.assertIn("TX-BINANCE-1001", sent.body)
 
-    def test_submission_with_underpaid_amount_rejected(self):
-        """Submitting less than the required plan amount is rejected."""
+    def test_server_uses_plan_price_not_user_input(self):
+        """Server uses plan price from DB (not user-submitted amount) for the payment record."""
         self.client.force_login(self.user)
         url = reverse('payments:binance_manual_checkout', args=['professional'])
         data = {
-            'transaction_id': 'TX-UNDERPAID-01',
-            'sender_identifier': 'UID-SENDER-01',
-            'amount': '30.00',  # Required is 50.00
+            'transaction_id': 'TX-SERVER-PRICE-01',
+            # No amount field submitted — server should use plan price ($50.00)
         }
         response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode('utf-8')
-        self.assertIn("less than the required plan amount", content)
-        self.assertFalse(Payment.objects.filter(transaction_id='TX-UNDERPAID-01').exists())
+        payment = Payment.objects.filter(transaction_id='TX-SERVER-PRICE-01').first()
+        self.assertIsNotNone(payment)
+        # Server enforces plan price from database
+        self.assertEqual(payment.amount, Decimal('50.00'))
+        self.assertRedirects(response, reverse('payments:binance_manual_status', args=[payment.id]))
 
     def test_submission_with_missing_transaction_id_rejected(self):
         """Missing required transaction ID is rejected."""
@@ -178,77 +175,44 @@ class BinanceManualPaymentTests(TestCase):
         # First submission
         self.client.post(url, {
             'transaction_id': 'TX-DUP-CHECK',
-            'sender_identifier': 'UID-01',
-            'amount': '50.00'
         })
         self.assertTrue(Payment.objects.filter(transaction_id='TX-DUP-CHECK').exists())
 
         # Second submission with same transaction ID
         response = self.client.post(url, {
             'transaction_id': 'TX-DUP-CHECK',
-            'sender_identifier': 'UID-02',
-            'amount': '50.00'
         })
         self.assertEqual(response.status_code, 200)
         content = response.content.decode('utf-8')
         self.assertIn("already been submitted or processed", content)
 
-    def test_file_upload_validation_accepts_valid_image(self):
-        """Valid PNG proof file is accepted and stored."""
+    def test_no_proof_file_field_in_simplified_form(self):
+        """Binance checkout form does not contain proof_file upload field (screenshot not required)."""
         self.client.force_login(self.user)
         url = reverse('payments:binance_manual_checkout', args=['professional'])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        # Form should not have a file upload input for proof
+        self.assertNotIn('proof_file', content)
+        self.assertNotIn('enctype="multipart/form-data"', content)
+        # Should still say screenshot not required
+        self.assertIn('screenshot', content.lower())
 
-        # Minimal valid 1x1 PNG
-        png_bytes = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\rIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82'
-        uploaded_file = SimpleUploadedFile("proof.png", png_bytes, content_type="image/png")
-
-        data = {
-            'transaction_id': 'TX-WITH-PROOF-01',
-            'sender_identifier': 'UID-PROOF-USER',
-            'amount': '50.00',
-            'proof_file': uploaded_file,
-        }
-        response = self.client.post(url, data)
-        payment = Payment.objects.filter(transaction_id='TX-WITH-PROOF-01').first()
+    def test_submission_with_only_transaction_id_creates_pending_payment(self):
+        """Simplified form: only transaction_id is needed to create a pending payment."""
+        self.client.force_login(self.user)
+        url = reverse('payments:binance_manual_checkout', args=['professional'])
+        response = self.client.post(url, {
+            'transaction_id': 'TX-SIMPLE-SUBMIT-99',
+        })
+        payment = Payment.objects.filter(transaction_id='TX-SIMPLE-SUBMIT-99').first()
         self.assertIsNotNone(payment)
-        self.assertTrue(bool(payment.proof_file))
+        self.assertEqual(payment.status, Payment.STATUS_PENDING)
+        self.assertFalse(bool(payment.proof_file))  # No screenshot expected
+        self.assertRedirects(response, reverse('payments:binance_manual_status', args=[payment.id]))
 
-    def test_file_upload_validation_rejects_disallowed_extension(self):
-        """Executable or script file extensions are rejected."""
-        self.client.force_login(self.user)
-        url = reverse('payments:binance_manual_checkout', args=['professional'])
 
-        bad_file = SimpleUploadedFile("malicious.sh", b"echo hack", content_type="text/x-shellscript")
-        data = {
-            'transaction_id': 'TX-BAD-FILE',
-            'sender_identifier': 'UID-01',
-            'amount': '50.00',
-            'proof_file': bad_file,
-        }
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode('utf-8')
-        self.assertIn("is not permitted", content)
-        self.assertFalse(Payment.objects.filter(transaction_id='TX-BAD-FILE').exists())
-
-    def test_file_upload_validation_rejects_oversized_file(self):
-        """Files larger than 5 MB are rejected."""
-        self.client.force_login(self.user)
-        url = reverse('payments:binance_manual_checkout', args=['professional'])
-
-        large_bytes = b'0' * (5 * 1024 * 1024 + 1024)  # > 5 MB
-        large_file = SimpleUploadedFile("large_receipt.jpg", large_bytes, content_type="image/jpeg")
-        data = {
-            'transaction_id': 'TX-LARGE-FILE',
-            'sender_identifier': 'UID-01',
-            'amount': '50.00',
-            'proof_file': large_file,
-        }
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode('utf-8')
-        self.assertIn("exceeds maximum allowed size of 5 MB", content)
-        self.assertFalse(Payment.objects.filter(transaction_id='TX-LARGE-FILE').exists())
 
     def test_payment_status_user_ownership_enforced(self):
         """Users can only view their own payment status page (IDOR protection)."""

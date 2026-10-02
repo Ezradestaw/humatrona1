@@ -3,63 +3,67 @@ from subscriptions.models import SubscriptionPlan
 
 
 class Command(BaseCommand):
-    help = "Seeds the initial four subscription plans (Section 21)."
+    help = "Seeds or updates the four PDF Stealth subscription plans."
 
     def handle(self, *args, **options):
         plans_data = [
             {
-                'name': 'Starter',
-                'code': 'starter',
-                'description': 'Ideal for individual professionals with occasional PDF Stealth requirements.',
-                'price': 20.00,
+                'name': 'Free',
+                'code': 'free',
+                'slug': 'free',
+                'description': 'Get started with 5 PDF Stealth processes per month at no cost.',
+                'price': 0.00,
                 'currency': 'USD',
-                'price_etb': 2700.00,
+                'price_etb': 0.00,
                 'duration_days': 30,
-                'pdf_limit': 10,
-                'max_file_size_mb': 25,
-                'max_pages_per_pdf': 100,
+                'usage_limit': 5,
+                'max_file_size': 10,
+                'processing_priority': 'Standard',
                 'active': True,
                 'sort_order': 1,
             },
             {
-                'name': 'Professional',
-                'code': 'professional',
-                'description': 'Recommended primary plan for regular high-quality PDF flattening and processing.',
-                'price': 50.00,
+                'name': 'Basic',
+                'code': 'basic',
+                'slug': 'basic',
+                'description': 'For regular users who need frequent PDF Stealth processing.',
+                'price': 18.00,
                 'currency': 'USD',
-                'price_etb': 6750.00,
+                'price_etb': 400.00,
                 'duration_days': 30,
-                'pdf_limit': 25,
-                'max_file_size_mb': 50,
-                'max_pages_per_pdf': 200,
+                'usage_limit': 50,
+                'max_file_size': 50,
+                'processing_priority': 'Higher than Free',
                 'active': True,
                 'sort_order': 2,
             },
             {
-                'name': 'Business',
-                'code': 'business',
-                'description': 'Expanded processing capacity for demanding document teams and offices.',
-                'price': 100.00,
+                'name': 'Pro',
+                'code': 'pro',
+                'slug': 'pro',
+                'description': 'Priority PDF Stealth processing for professionals with high volume needs.',
+                'price': 48.00,
                 'currency': 'USD',
-                'price_etb': 13500.00,
+                'price_etb': 600.00,
                 'duration_days': 30,
-                'pdf_limit': 60,
-                'max_file_size_mb': 100,
-                'max_pages_per_pdf': 350,
+                'usage_limit': 200,
+                'max_file_size': 100,
+                'processing_priority': 'Priority',
                 'active': True,
                 'sort_order': 3,
             },
             {
-                'name': 'Enterprise',
-                'code': 'enterprise',
-                'description': 'Maximum volume and priority background worker throughput for heavy workflows.',
-                'price': 250.00,
+                'name': 'Unlimited',
+                'code': 'unlimited',
+                'slug': 'unlimited',
+                'description': 'Highest priority PDF Stealth processing with unlimited documents and maximum file size.',
+                'price': 90.00,
                 'currency': 'USD',
-                'price_etb': 33750.00,
+                'price_etb': 1000.00,
                 'duration_days': 30,
-                'pdf_limit': 200,
-                'max_file_size_mb': 200,
-                'max_pages_per_pdf': 600,
+                'usage_limit': 0,  # 0 = unlimited (fair-use policy applies)
+                'max_file_size': 250,
+                'processing_priority': 'Highest',
                 'active': True,
                 'sort_order': 4,
             },
@@ -68,13 +72,13 @@ class Command(BaseCommand):
         created_count = 0
         for data in plans_data:
             plan, created = SubscriptionPlan.objects.update_or_create(
-                code=data['code'],
+                slug=data['slug'],
                 defaults=data
             )
             if created:
                 created_count += 1
                 self.stdout.write(self.style.SUCCESS(f"Created plan: {plan.name}"))
             else:
-                self.stdout.write(f"Updated plan: {plan.name}")
+                self.stdout.write(f"Updated plan: {plan.name} (${plan.price} / {plan.price_etb} ETB)")
 
         self.stdout.write(self.style.SUCCESS(f"Seed complete. {created_count} plans created."))

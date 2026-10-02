@@ -61,8 +61,8 @@ class TelebirrPlansAdminAndSubmissionTests(TestCase):
             defaults={
                 'name': 'Basic',
                 'code': 'basic',
-                'price': Decimal('9.00'),
-                'price_etb': Decimal('200.00'),
+                'price': Decimal('18.00'),
+                'price_etb': Decimal('400.00'),
                 'currency': 'USD',
                 'billing_period': 'month',
                 'usage_limit': 50,
@@ -76,8 +76,8 @@ class TelebirrPlansAdminAndSubmissionTests(TestCase):
             defaults={
                 'name': 'Pro',
                 'code': 'pro',
-                'price': Decimal('24.00'),
-                'price_etb': Decimal('300.00'),
+                'price': Decimal('48.00'),
+                'price_etb': Decimal('600.00'),
                 'currency': 'USD',
                 'billing_period': 'month',
                 'usage_limit': 200,
@@ -91,8 +91,8 @@ class TelebirrPlansAdminAndSubmissionTests(TestCase):
             defaults={
                 'name': 'Unlimited',
                 'code': 'unlimited',
-                'price': Decimal('45.00'),
-                'price_etb': Decimal('500.00'),
+                'price': Decimal('90.00'),
+                'price_etb': Decimal('1000.00'),
                 'currency': 'USD',
                 'billing_period': 'month',
                 'usage_limit': 0,
@@ -110,30 +110,30 @@ class TelebirrPlansAdminAndSubmissionTests(TestCase):
         self.telebirr_settings.save()
 
     def test_telebirr_plans_etb_pricing(self):
-        """Verify the 4 Telebirr plans have exact prices: Free (0 ETB), 200 ETB, 300 ETB, 500 ETB."""
+        """Verify the 4 Telebirr plans have exact prices: Free (0 ETB), 400 ETB, 600 ETB, 1000 ETB."""
         p_free = PricingCalculator.calculate(self.free_plan, self.user)
         self.assertEqual(p_free['final_etb'], Decimal('0.00'))
 
         p_basic = PricingCalculator.calculate(self.basic_plan, self.user)
-        self.assertEqual(p_basic['final_etb'], Decimal('200.00'))
+        self.assertEqual(p_basic['final_etb'], Decimal('400.00'))
 
         p_pro = PricingCalculator.calculate(self.pro_plan, self.user)
-        self.assertEqual(p_pro['final_etb'], Decimal('300.00'))
+        self.assertEqual(p_pro['final_etb'], Decimal('600.00'))
 
         p_unlimited = PricingCalculator.calculate(self.unlimited_plan, self.user)
-        self.assertEqual(p_unlimited['final_etb'], Decimal('500.00'))
+        self.assertEqual(p_unlimited['final_etb'], Decimal('1000.00'))
 
     def test_ethiopian_user_sees_etb_plans_on_pricing_page(self):
-        """Authenticated Ethiopian user sees Free, 200 ETB, 300 ETB, and 500 ETB on plans page."""
+        """Authenticated Ethiopian user sees Free, 400 ETB, 600 ETB, and 1000 ETB on plans page."""
         self.client.force_login(self.user)
         response = self.client.get(reverse('subscriptions:plans'))
         self.assertEqual(response.status_code, 200)
         content = response.content.decode('utf-8')
 
         self.assertIn("Free (Telebirr)", content)
-        self.assertIn("200 ETB (Telebirr)", content)
-        self.assertIn("300 ETB (Telebirr)", content)
-        self.assertIn("500 ETB (Telebirr)", content)
+        self.assertIn("400 ETB (Telebirr)", content)
+        self.assertIn("600 ETB (Telebirr)", content)
+        self.assertIn("1000 ETB (Telebirr)", content)
 
     def test_admin_configures_telebirr_name_and_phone(self):
         """Admin can configure Name and Phone Number in TelebirrPaymentSettings in admin."""
@@ -148,10 +148,10 @@ class TelebirrPlansAdminAndSubmissionTests(TestCase):
 
         self.assertIn("Abebe Bikila", content)
         self.assertIn("0922334455", content)
-        self.assertIn("200.00 ETB", content)
+        self.assertIn("400.00 ETB", content)
 
     def test_telebirr_user_uploads_transaction_number_upon_completion(self):
-        """User uploads/submits their transaction number upon completing Telebirr payment."""
+        """User submits only their transaction number upon completing Telebirr payment."""
         self.client.force_login(self.user)
         url = reverse('payments:verify_telebirr', args=['basic'])
 
@@ -166,7 +166,7 @@ class TelebirrPlansAdminAndSubmissionTests(TestCase):
         self.assertIsNotNone(payment)
         self.assertEqual(payment.user, self.user)
         self.assertEqual(payment.plan, self.basic_plan)
-        self.assertEqual(payment.amount, Decimal('200.00'))
+        self.assertEqual(payment.amount, Decimal('400.00'))
         self.assertEqual(payment.currency, 'ETB')
         self.assertEqual(payment.status, Payment.STATUS_PENDING)
         self.assertEqual(payment.provider, Payment.PROVIDER_TELEBIRR)
@@ -180,12 +180,12 @@ class TelebirrPlansAdminAndSubmissionTests(TestCase):
             payment_method=Payment.METHOD_TELEBIRR,
             transaction_id='TB-TX-APPROVE-1',
             plan=self.pro_plan,
-            amount=Decimal('300.00'),
+            amount=Decimal('600.00'),
             currency='ETB',
             status=Payment.STATUS_PENDING,
             payment_country='Ethiopia',
-            original_amount=Decimal('300.00'),
-            final_amount=Decimal('300.00'),
+            original_amount=Decimal('600.00'),
+            final_amount=Decimal('600.00'),
         )
 
         success, msg, _ = PaymentService.approve_telebirr_payment(payment, self.admin)
@@ -228,5 +228,6 @@ class TelebirrPlansAdminAndSubmissionTests(TestCase):
         self.assertIsNotNone(payment)
         self.assertFalse(bool(payment.proof_file))  # No screenshot uploaded
         self.assertEqual(payment.status, Payment.STATUS_PENDING)
-        self.assertEqual(payment.amount, Decimal('24.00'))
+        self.assertEqual(payment.amount, Decimal('48.00'))  # Pro plan doubled price
         self.assertRedirects(response, reverse('payments:binance_manual_status', args=[payment.id]))
+

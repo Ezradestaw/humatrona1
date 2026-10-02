@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,6 +12,8 @@ from .forms import PDFUploadForm
 from .models import PDFProcessingJob
 from .tasks import process_pdf_job_task
 from subscriptions.services import SubscriptionService
+
+logger = logging.getLogger('humatron')
 
 
 @login_required

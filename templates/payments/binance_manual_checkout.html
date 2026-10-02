@@ -122,7 +122,7 @@
       After completing the transfer, enter your transaction number below. An administrator will verify the transaction and activate your subscription.
     </p>
 
-    <form method="post" enctype="multipart/form-data" novalidate>
+    <form method="post" novalidate>
       {% csrf_token %}
 
       {% if form.non_field_errors %}
@@ -133,95 +133,19 @@
         </div>
       {% endif %}
 
-      <div class="grid-2" style="gap: 16px; margin-bottom: 14px;">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.transaction_id.id_for_label }}">
-            {{ form.transaction_id.label }} <span style="color: var(--color-error);">*</span>
-          </label>
-          {{ form.transaction_id }}
-          {% if form.transaction_id.errors %}
-            <div style="color: var(--color-error); font-size: 12px; margin-top: 4px;">
-              {{ form.transaction_id.errors.0 }}
-            </div>
-          {% endif %}
-          <div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 3px;">
-            {{ form.transaction_id.help_text }}
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="{{ form.sender_identifier.id_for_label }}">
-            {{ form.sender_identifier.label }}
-          </label>
-          {{ form.sender_identifier }}
-          {% if form.sender_identifier.errors %}
-            <div style="color: var(--color-error); font-size: 12px; margin-top: 4px;">
-              {{ form.sender_identifier.errors.0 }}
-            </div>
-          {% endif %}
-          <div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 3px;">
-            {{ form.sender_identifier.help_text }}
-          </div>
-        </div>
-      </div>
-
-      <div class="grid-2" style="gap: 16px; margin-bottom: 14px;">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.amount.id_for_label }}">
-            {{ form.amount.label }}
-          </label>
-          {{ form.amount }}
-          {% if form.amount.errors %}
-            <div style="color: var(--color-error); font-size: 12px; margin-top: 4px;">
-              {{ form.amount.errors.0 }}
-            </div>
-          {% endif %}
-          <div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 3px;">
-            Must match plan price of {{ expected_amount|floatformat:2 }} USDT.
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="{{ form.sent_at.id_for_label }}">
-            {{ form.sent_at.label }}
-          </label>
-          {{ form.sent_at }}
-          {% if form.sent_at.errors %}
-            <div style="color: var(--color-error); font-size: 12px; margin-top: 4px;">
-              {{ form.sent_at.errors.0 }}
-            </div>
-          {% endif %}
-          <div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 3px;">
-            {{ form.sent_at.help_text }}
-          </div>
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 14px;">
-        <label class="form-label" for="{{ form.proof_file.id_for_label }}">
-          {{ form.proof_file.label }}
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label class="form-label" for="{{ form.transaction_id.id_for_label }}">
+          {{ form.transaction_id.label }} <span style="color: var(--color-error);">*</span>
         </label>
-        {{ form.proof_file }}
-        {% if form.proof_file.errors %}
+        {{ form.transaction_id }}
+        {% if form.transaction_id.errors %}
           <div style="color: var(--color-error); font-size: 12px; margin-top: 4px;">
-            {{ form.proof_file.errors.0 }}
+            {{ form.transaction_id.errors.0 }}
           </div>
         {% endif %}
         <div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 3px;">
-          {{ form.proof_file.help_text }}
+          {{ form.transaction_id.help_text }}
         </div>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 20px;">
-        <label class="form-label" for="{{ form.note.id_for_label }}">
-          {{ form.note.label }}
-        </label>
-        {{ form.note }}
-        {% if form.note.errors %}
-          <div style="color: var(--color-error); font-size: 12px; margin-top: 4px;">
-            {{ form.note.errors.0 }}
-          </div>
-        {% endif %}
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-weight: 700; font-size: 16px; background: #f3ba2f; color: #181a20; border-color: #f3ba2f;">

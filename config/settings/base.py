@@ -223,14 +223,14 @@ MAX_UPLOAD_SIZE_MB = env.int('MAX_UPLOAD_SIZE_MB', default=50)
 MAX_PAGES = env.int('MAX_PAGES', default=200)
 MAX_PROCESSING_TIME_SECONDS = env.int('MAX_PROCESSING_TIME_SECONDS', default=180)
 FILE_RETENTION_DAYS = env.int('FILE_RETENTION_DAYS', default=7)
-PDF_RENDER_DPI = env.int('PDF_RENDER_DPI', default=150)
+PDF_RENDER_DPI = env.int('PDF_RENDER_DPI', default=200)  # 200 DPI for high visual fidelity
 PDF_METADATA_PRODUCER = env.str('PDF_METADATA_PRODUCER', default='Humatron PDF Processor')
 PDF_METADATA_TITLE = env.str('PDF_METADATA_TITLE', default='')
 PDF_METADATA_CREATOR = env.str('PDF_METADATA_CREATOR', default='')
 
 # OCR Stealth PDF Degradation Settings
 PDF_STEALTH_ENABLED = env.bool('PDF_STEALTH_ENABLED', default=True)
-PDF_STEALTH_SSIM = env.float('PDF_STEALTH_SSIM', default=0.985)
+PDF_STEALTH_SSIM = env.float('PDF_STEALTH_SSIM', default=0.990)  # Tighter SSIM for near-identical visual output
 PDF_STEALTH_STRENGTH = env('PDF_STEALTH_STRENGTH', default=None)
 if PDF_STEALTH_STRENGTH is not None and str(PDF_STEALTH_STRENGTH).strip():
     try:
@@ -247,7 +247,7 @@ PDF_STEALTH_SEED = env.int('PDF_STEALTH_SEED', default=0)
 
 # Subtle Noise & Invisible Unicode OCR Settings
 PDF_SUBTLE_NOISE_ENABLED = env.bool('PDF_SUBTLE_NOISE_ENABLED', default=True)
-PDF_SUBTLE_NOISE_STRENGTH = env.float('PDF_SUBTLE_NOISE_STRENGTH', default=0.2)  # 0.1-0.5 = extremely to very subtle
+PDF_SUBTLE_NOISE_STRENGTH = env.float('PDF_SUBTLE_NOISE_STRENGTH', default=0.15)  # 0.15 = extremely subtle, near-imperceptible
 PDF_INVISIBLE_OCR_ENABLED = env.bool('PDF_INVISIBLE_OCR_ENABLED', default=False)
 PDF_INVISIBLE_OCR_DPI = env.int('PDF_INVISIBLE_OCR_DPI', default=200)
 PDF_MAX_INVISIBLE_BYTES = env.int('PDF_MAX_INVISIBLE_BYTES', default=1024 * 1024)  # 1 MB

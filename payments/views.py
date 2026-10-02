@@ -77,24 +77,13 @@ def verify_telebirr_view(request, plan_code):
         form = TelebirrVerificationForm(request.POST)
         if form.is_valid():
             tx_id = form.cleaned_data.get('transaction_id', '').strip()
-            raw_message = form.cleaned_data.get('raw_message', '').strip()
-
-            # If full SMS message was provided, attempt direct automated verification
-            if raw_message and len(raw_message) > 20:
-                success, msg, payment = PaymentService.verify_and_activate_telebirr(
-                    user=request.user,
-                    plan=plan,
-                    raw_message=raw_message
-                )
-            else:
-                # Customer uploaded/entered their transaction number upon completion
-                success, msg, payment = PaymentService.submit_telebirr_payment(
-                    user=request.user,
-                    plan=plan,
-                    transaction_id=tx_id,
-                    raw_message=raw_message
-                )
-
+            # Simple transaction-number-only submission
+            success, msg, payment = PaymentService.submit_telebirr_payment(
+                user=request.user,
+                plan=plan,
+                transaction_id=tx_id,
+                raw_message=''
+            )
             if success:
                 messages.success(request, msg)
                 return redirect('accounts:dashboard')
@@ -127,9 +116,9 @@ def payment_history_view(request):
 @login_required
 def binance_manual_checkout_view(request, plan_code):
     """
-    Binance Payment checkout page and submission handler (Section 2, 5).
-    Displays admin-configured receiving identifier, QR code, and clear instructions.
-    Accepts customer submission of TxID, sender UID, proof screenshot, and notes.
+    Binance Payment checkout page and submission handler.
+    Displays admin-configured receiving identifier, clear instructions, and a simple
+    transaction-number-only submission form (no screenshot upload required).
     """
     plan = SubscriptionPlan.objects.filter(active=True).filter(
         models.Q(slug=plan_code) | models.Q(code=plan_code)
@@ -148,7 +137,6 @@ def binance_manual_checkout_view(request, plan_code):
     if request.method == 'POST':
         form = BinanceManualSubmissionForm(
             request.POST,
-            request.FILES,
             expected_amount=expected_amount,
             user=user
         )
@@ -157,11 +145,11 @@ def binance_manual_checkout_view(request, plan_code):
                 user=user,
                 plan=plan,
                 transaction_id=form.cleaned_data['transaction_id'],
-                sender_identifier=form.cleaned_data['sender_identifier'],
-                amount=form.cleaned_data['amount'],
-                sent_at=form.cleaned_data.get('sent_at'),
-                proof_file=form.cleaned_data.get('proof_file'),
-                note=form.cleaned_data.get('note', '')
+                sender_identifier='',
+                amount=expected_amount,
+                sent_at=None,
+                proof_file=None,
+                note=''
             )
             if success and payment:
                 messages.success(request, msg)
