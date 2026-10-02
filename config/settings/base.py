@@ -33,6 +33,29 @@ DEBUG = env('DJANGO_DEBUG')
 ALLOWED_HOSTS = env('DJANGO_ALLOWED_HOSTS')
 CSRF_TRUSTED_ORIGINS = env('DJANGO_CSRF_TRUSTED_ORIGINS')
 
+if DEBUG:
+    # Allow local network hosting and testing
+    if '*' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS = list(ALLOWED_HOSTS) + ['*']
+    
+    # Automatically add detected local network IPs to CSRF_TRUSTED_ORIGINS
+    import socket
+    local_origins = list(CSRF_TRUSTED_ORIGINS)
+    detected_ips = ['0.0.0.0', '127.0.0.1', 'localhost']
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        detected_ips.append(s.getsockname()[0])
+        s.close()
+    except Exception:
+        pass
+    for ip in detected_ips:
+        for port in [8000, 8080]:
+            origin = f'http://{ip}:{port}'
+            if origin not in local_origins:
+                local_origins.append(origin)
+    CSRF_TRUSTED_ORIGINS = local_origins
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
